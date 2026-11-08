@@ -1,0 +1,11 @@
+# Add this ingress before the catch-all in the Cloudflared config.yml.
+# Change the hostname and make APP_URL match it exactly.
+#
+# After editing:
+#   cloudflared tunnel route dns <tunnel-name> quota.example.com
+#   cloudflared service restart
+
+ingress:
+  - hostname: quota.example.com
+    service: http://127.0.0.1:8787
+  - service: http_status:404

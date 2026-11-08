@@ -1,0 +1,13 @@
+node_modules/
+public/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.pgdata/
+.pgpass
+*.dump
+backups/
+docs/screenshots/
