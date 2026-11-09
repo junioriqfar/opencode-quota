@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { join, normalize } from "node:path";
 import { config } from "./config.ts";
 import { initSchema, sql } from "./db.ts";
+import { isSetupAvailable } from "./auth.ts";
+import { logGeneratedSetupToken } from "./setup-token.ts";
 import { HttpError } from "./errors.ts";
 import { startSyncScheduler } from "./sync.ts";
 import authRoutes from "./routes/auth.ts";
@@ -10,6 +12,9 @@ import inviteRoutes from "./routes/invites.ts";
 import adminRoutes from "./routes/admin.ts";
 
 await initSchema();
+if (await isSetupAvailable()) {
+  logGeneratedSetupToken();
+}
 
 const app = new Hono();
 

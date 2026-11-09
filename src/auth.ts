@@ -219,6 +219,49 @@ export async function countSuperadmins(): Promise<number> {
   return Number(rows[0]?.count ?? 0);
 }
 
+export class SetupUnavailableError extends Error {
+  constructor(message = "Setup is only available when the database is empty.") {
+    super(message);
+    this.name = "SetupUnavailableError";
+  }
+}
+
+export async function countUsers(): Promise<number> {
+  const rows = await sql<{ count: string }[]>`
+    select count(*)::text as count from users
+  `;
+  return Number(rows[0]?.count ?? 0);
+}
+
+export async function isSetupAvailable(): Promise<boolean> {
+  return (await countUsers()) === 0;
+}
+
+export async function createFirstSuperadmin(input: {
+  email: string;
+  password: string;
+  name: string;
+}): Promise<{ id: string; email: string; name: string }> {
+  const email = normalizeEmail(input.email);
+  const name = input.name.trim();
+  const passwordHash = await hashPassword(input.password);
+  return await sql.begin(async (tx) => {
+    // Serialize setup attempts. A concurrent signup or setup waits here,
+    // so only one first account can ever be created.
+    await tx`lock table users in exclusive mode`;
+    const rows = await tx<{ count: string }[]>`
+      select count(*)::text as count from users
+    `;
+    if (Number(rows[0]?.count ?? 0) > 0) throw new SetupUnavailableError();
+    const userId = newId();
+    await tx`
+      insert into users(id, email, name, password_hash, email_verified_at, is_superadmin)
+      values (${userId}, ${email}, ${name}, ${passwordHash}, now(), true)
+    `;
+    return { id: userId, email, name };
+  });
+}
+
 export async function createEmailToken(
   userId: string,
   type: "verify" | "reset",

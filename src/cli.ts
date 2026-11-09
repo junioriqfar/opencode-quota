@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { config } from "./config.ts";
 import { initSchema, closeDb, newId, sql } from "./db.ts";
 import { encryptSecret, hashToken, randomToken } from "./crypto.ts";
-import { hashPassword, findUserByEmail, countSuperadmins, normalizeEmail } from "./auth.ts";
+import { createFirstSuperadmin, findUserByEmail, isSetupAvailable, normalizeEmail } from "./auth.ts";
 import { syncAllGroups } from "./sync.ts";
 
 function argsMap(args: string[]): Map<string, string> {
@@ -22,33 +22,24 @@ async function setupSuperadmin(input: {
   password: string;
   name: string;
 }): Promise<void> {
-  const admins = await countSuperadmins();
-  if (admins > 0) throw new Error("A super-admin already exists.");
-  const email = normalizeEmail(input.email);
-  const existing = await findUserByEmail(email);
-  if (existing) throw new Error("An account with this email already exists.");
-  await sql`
-    insert into users(id, email, name, password_hash, email_verified_at, is_superadmin)
-    values (${newId()}, ${email}, ${input.name}, ${await hashPassword(input.password)}, now(), true)
-  `;
-  console.log(`Super-admin created: ${email}`);
+  const created = await createFirstSuperadmin(input);
+  console.log(`Super-admin created: ${created.email}`);
 }
 
 async function seedDev(): Promise<void> {
-  const admins = await countSuperadmins();
-  if (admins > 0) {
-    console.log("Super-admin already exists; seed skipped.");
+  if (!(await isSetupAvailable())) {
+    console.log("Database is not empty; seed skipped.");
     return;
   }
   const email = normalizeEmail(process.env.SEED_ADMIN_EMAIL ?? "admin@example.test");
   const generated = !process.env.SEED_ADMIN_PASSWORD;
   const password = process.env.SEED_ADMIN_PASSWORD ?? randomToken(18);
-  await setupSuperadmin({
+  const created = await createFirstSuperadmin({
     email,
     password,
     name: "Local Admin",
   });
-  console.log(`Dev super-admin created: ${email}`);
+  console.log(`Dev super-admin created: ${created.email}`);
   if (generated) {
     console.log(`Generated password (shown once): ${password}`);
   } else {

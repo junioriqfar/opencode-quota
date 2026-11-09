@@ -5,19 +5,23 @@ import {
   assertCsrf,
   assertOrigin,
   consumeEmailToken,
-  countSuperadmins,
   createEmailToken,
+  createFirstSuperadmin,
   createSession,
   destroySession,
   findUserByEmail,
   hashPassword,
+  isSetupAvailable,
   normalizeEmail,
   readSession,
   requireAuth,
+  SetupUnavailableError,
   verifyPassword,
   type AppEnv,
   type AuthContext,
 } from "../auth.ts";
+import { timingSafeEqualText } from "../crypto.ts";
+import { clearSetupToken, getSetupToken, logGeneratedSetupToken } from "../setup-token.ts";
 import { audit, newId, sql } from "../db.ts";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../email.ts";
 import { badRequest, conflict, forbidden, unauthorized } from "../errors.ts";
@@ -45,12 +49,12 @@ function publicUser(user: AuthContext["user"], csrfToken: string) {
 auth.get("/config", async (c) => {
   c.header("Cache-Control", "no-store");
   const settings = await getAppSettings();
-  const superadmins = await countSuperadmins();
+  const setupRequired = await isSetupAvailable();
   return c.json({
     appName: "Quota Status",
     turnstileSiteKey: config.turnstileSiteKey,
     signupOpen: settings.signupOpen,
-    setupRequired: superadmins === 0,
+    setupRequired,
     devEmailLinks: config.devExposeEmailLinks,
   });
 });
@@ -58,6 +62,9 @@ auth.get("/config", async (c) => {
 auth.post("/signup", async (c) => {
   assertOrigin(c);
   rateLimit(`signup:${clientIp(c)}`, 10, 60 * 60_000);
+  if (await isSetupAvailable()) {
+    throw conflict("Complete setup before creating accounts.");
+  }
   const body = await parseJson(
     c,
     z.object({
@@ -240,15 +247,17 @@ auth.post("/reset", async (c) => {
 });
 
 auth.get("/setup/status", async (c) => {
-  const superadmins = await countSuperadmins();
-  return c.json({ setupRequired: superadmins === 0 });
+  const setupRequired = await isSetupAvailable();
+  if (setupRequired) logGeneratedSetupToken();
+  return c.json({ setupRequired });
 });
 
 auth.post("/setup", async (c) => {
   assertOrigin(c);
-  const superadmins = await countSuperadmins();
-  if (superadmins > 0) throw conflict("Setup has already been completed.");
-  if (!config.setupToken) throw forbidden("SETUP_TOKEN is not configured on the server.");
+  rateLimit(`setup:${clientIp(c)}`, 10, 15 * 60_000);
+  if (!(await isSetupAvailable())) throw conflict("Setup has already been completed.");
+  const token = getSetupToken();
+  if (!token) throw forbidden("SETUP_TOKEN is not configured on the server.");
   const body = await parseJson(
     c,
     z.object({
@@ -258,22 +267,26 @@ auth.post("/setup", async (c) => {
       password: passwordSchema,
     }),
   );
-  if (body.setupToken !== config.setupToken) throw forbidden("Invalid setup token.");
-  const email = normalizeEmail(body.email);
-  const existing = await findUserByEmail(email);
-  if (existing) throw conflict("An account with this email already exists.");
-  const userId = newId();
-  await sql`
-    insert into users(id, email, name, password_hash, email_verified_at, is_superadmin)
-    values (${userId}, ${email}, ${body.name.trim()}, ${await hashPassword(body.password)}, now(), true)
-  `;
-  const session = await createSession(userId, c);
-  await audit({ groupId: null, actorUserId: userId, action: "auth.superadmin_created", target: email });
+  if (!timingSafeEqualText(body.setupToken, token)) throw forbidden("Invalid setup token.");
+  let created: { id: string; email: string; name: string };
+  try {
+    created = await createFirstSuperadmin({
+      email: body.email,
+      password: body.password,
+      name: body.name,
+    });
+  } catch (error) {
+    if (error instanceof SetupUnavailableError) throw conflict(error.message);
+    throw error;
+  }
+  const session = await createSession(created.id, c);
+  await audit({ groupId: null, actorUserId: created.id, action: "auth.superadmin_created", target: created.email });
+  clearSetupToken();
   return c.json({
     user: {
-      id: userId,
-      email,
-      name: body.name.trim(),
+      id: created.id,
+      email: created.email,
+      name: created.name,
       isSuperadmin: true,
       emailVerified: true,
       csrfToken: session.csrfToken,

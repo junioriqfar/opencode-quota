@@ -107,7 +107,9 @@ NODE_ENV=development
 COOKIE_SECURE=false
 SESSION_SECRET=...
 APP_ENCRYPTION_KEY=...
-SETUP_TOKEN=<generate-with-openssl-rand-hex-16>
+SETUP_TOKEN=
+# In development, leave empty to auto-generate one; it is printed once in the server log.
+# In production, set a strong value or setup is disabled.
 EMAIL_FROM=OpenCode Quota <noreply@example.com>
 RESEND_API_KEY=
 TURNSTILE_SITE_KEY=
@@ -137,6 +139,8 @@ Option A: UI setup
 1. Open `/setup`.
 2. Enter `SETUP_TOKEN`, name, email, password.
 3. The account becomes super-admin.
+
+Setup is only available while the `users` table is empty. Concurrent setup attempts are serialized, so only one account can win. If `SETUP_TOKEN` is empty in development, a token is generated and printed **once** in the server log; opening `/setup` does not rotate it. In production, set `SETUP_TOKEN` explicitly or setup stays disabled.
 
 Option B: CLI
 
@@ -304,7 +308,9 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 - Sessions: random 32-byte token, SHA-256 hash in DB, HttpOnly/Secure/SameSite cookie.
 - CSRF: per-session token + Origin check.
 - Email tokens: one-time, hashed in DB, short expiry.
-- Rate limits: login, signup, reset, invite, sync.
+- Rate limits: login, signup, reset, invite, sync, setup.
+- Setup guard: only when the `users` table is empty; a table lock serializes concurrent setup requests.
+- Setup token: static from `SETUP_TOKEN`; in development an empty value generates one stable token and logs it once. Page access never rotates it.
 - Turnstile server-side verification when configured.
 - Console keys: AES-256-GCM with per-record nonce and `group_id` AAD; never returned to the browser.
 - Tenant isolation: every group query is scoped by `group_id` and membership checks.

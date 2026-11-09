@@ -24,11 +24,13 @@ Do not put real credentials or personal emails in this file.
 If `/setup` redirects to `/login`, setup is already complete; skip to Step 3.
 
 1. Open <http://127.0.0.1:8788/setup>.
-2. Setup token: read `SETUP_TOKEN` from your local `.env` (never commit `.env`).
+2. Setup token: read `SETUP_TOKEN` from `.env`. In development, if it is empty, the server generates one and prints it once in the server log. Opening `/setup` does **not** rotate the token.
 3. Name: your name.
 4. Email: your own email address.
 5. Choose a strong password.
 6. Create the super-admin.
+
+Setup only works while the database has no users.
 
 You will land on `/app` with an empty group list.
 
