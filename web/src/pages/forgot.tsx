@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { post } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function ForgotPage() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ message: string; devResetUrl?: string } | null>(null);
+  usePageMeta({ title: result ? "Check your email" : "Forgot password" });
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();

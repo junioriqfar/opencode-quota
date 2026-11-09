@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import type { CurrentUser, PublicConfig } from "@shared/types";
+import { APP_NAME } from "@shared/brand";
 import { get, post, setCsrfToken } from "@/lib/api";
 
 interface SignupResponse {
@@ -38,7 +39,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const defaultConfig: PublicConfig = {
-  appName: "Quota Status",
+  appName: APP_NAME,
   turnstileSiteKey: "",
   signupOpen: true,
   setupRequired: false,

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { join, normalize } from "node:path";
 import { config } from "./config.ts";
 import { initSchema, sql } from "./db.ts";
+import { APP_NAME } from "../shared/brand.ts";
 import { isSetupAvailable } from "./auth.ts";
 import { logGeneratedSetupToken } from "./setup-token.ts";
 import { HttpError } from "./errors.ts";
@@ -77,7 +78,7 @@ async function serveIndex(): Promise<Response> {
   const index = await serveFile(join(config.publicDir, "index.html"), "none");
   if (index) return index;
   return new Response(
-    `<!doctype html><html><head><meta charset="utf-8"><title>Quota Status</title></head><body style="font-family:system-ui;max-width:720px;margin:48px auto;padding:0 20px"><h1>Quota Status</h1><p>Frontend is not built yet. Run <code>bun run build:web</code> and restart the server.</p></body></html>`,
+    `<!doctype html><html><head><meta charset="utf-8"><title>${APP_NAME}</title></head><body style="font-family:system-ui;max-width:720px;margin:48px auto;padding:0 20px"><h1>${APP_NAME}</h1><p>Frontend is not built yet. Run <code>bun run build:web</code> and restart the server.</p></body></html>`,
     { headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
 }

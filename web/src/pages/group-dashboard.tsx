@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { ConsoleStatus, GroupSummary, HistoryResponse, PeriodInfo } from "@shared/types";
 import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
 import { BillCard } from "@/components/bill-card";
 import { DailyChart } from "@/components/daily-chart";
 import { MembersTable } from "@/components/members-table";
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApi } from "@/hooks/use-api";
+import { usePageMeta } from "@/hooks/use-page-meta";
 import { ApiError } from "@/lib/api";
 import { notifySuccess } from "@/lib/notify";
 import { relativeTime } from "@/lib/format";
@@ -60,6 +62,12 @@ export function GroupDashboardPage() {
   const periodId = search.get("periodId") || undefined;
 
   const group = useApi<GroupBase>(groupId ? `/api/groups/${groupId}` : null);
+  usePageMeta({
+    title: group.data?.group.name ?? "Group",
+    group: group.data?.group
+      ? { id: group.data.group.id, name: group.data.group.name }
+      : null,
+  });
   const summary = useApi<GroupSummary>(
     groupId
       ? `/api/groups/${groupId}/summary${periodId ? `?periodId=${encodeURIComponent(periodId)}` : ""}`
@@ -130,10 +138,12 @@ export function GroupDashboardPage() {
 
   return (
     <AppShell groupId={groupId}>
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{base.group.name}</h1>
+      <PageHeader
+        backTo="/app"
+        backLabel="Back to groups"
+        title={base.group.name}
+        meta={
+          <>
             <Badge variant={base.group.isOwner ? "default" : "outline"} className="font-normal">
               {base.group.isOwner ? <Crown className="h-3 w-3" /> : <UserRound className="h-3 w-3" />}
               {base.group.isOwner ? "Owner" : "Member"}
@@ -149,56 +159,61 @@ export function GroupDashboardPage() {
                 Draft
               </Badge>
             )}
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Owner {base.group.ownerName} · {base.group.memberCount} member{base.group.memberCount === 1 ? "" : "s"} ·
-            sync {relativeTime(summary.data?.lastSync.at ?? null)}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {base.periods.length > 0 && (
-            <Select
-              value={periodId ?? "current"}
-              onValueChange={(value) => selectPeriod(value === "current" ? "" : value)}
+          </>
+        }
+        description={
+          <>
+            Owner {base.group.ownerName} · {base.group.memberCount} member
+            {base.group.memberCount === 1 ? "" : "s"} · sync{" "}
+            {relativeTime(summary.data?.lastSync.at ?? null)}
+          </>
+        }
+        actions={
+          <>
+            {base.periods.length > 0 && (
+              <Select
+                value={periodId ?? "current"}
+                onValueChange={(value) => selectPeriod(value === "current" ? "" : value)}
+              >
+                <SelectTrigger className="w-[230px]">
+                  <CalendarRange className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Current period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">Current period</SelectItem>
+                  {base.periods.map((period) => (
+                    <SelectItem key={period.id} value={period.id}>
+                      {period.label}
+                      {period.status === "finalized" ? " · finalized" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                summary.refresh();
+                history.refresh();
+                group.refresh();
+                notifySuccess("Dashboard refreshed.");
+              }}
             >
-              <SelectTrigger className="w-[230px]">
-                <CalendarRange className="mr-2 h-4 w-4 text-muted-foreground" />
-                <SelectValue placeholder="Current period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="current">Current period</SelectItem>
-                {base.periods.map((period) => (
-                  <SelectItem key={period.id} value={period.id}>
-                    {period.label}
-                    {period.status === "finalized" ? " · finalized" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              summary.refresh();
-              history.refresh();
-              group.refresh();
-              notifySuccess("Dashboard refreshed.");
-            }}
-          >
-            <RefreshCw />
-            Refresh
-          </Button>
-          {base.group.isOwner && (
-            <Button size="sm" asChild>
-              <Link to={`/app/g/${groupId}/admin`}>
-                <Settings2 />
-                Manage
-              </Link>
+              <RefreshCw />
+              Refresh
             </Button>
-          )}
-        </div>
-      </div>
+            {base.group.isOwner && (
+              <Button size="sm" asChild>
+                <Link to={`/app/g/${groupId}/admin`}>
+                  <Settings2 />
+                  Manage
+                </Link>
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {noPeriod ? (
         <Card>

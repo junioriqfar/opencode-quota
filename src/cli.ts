@@ -4,6 +4,7 @@ import { initSchema, closeDb, newId, sql } from "./db.ts";
 import { encryptSecret, hashToken, randomToken } from "./crypto.ts";
 import { createFirstSuperadmin, findUserByEmail, isSetupAvailable, normalizeEmail } from "./auth.ts";
 import { syncAllGroups } from "./sync.ts";
+import { APP_NAME } from "../shared/brand.ts";
 
 function argsMap(args: string[]): Map<string, string> {
   const map = new Map<string, string>();
@@ -274,7 +275,7 @@ async function main(): Promise<void> {
       case "help":
       case "--help":
       case "-h":
-        console.log(`Quota Status v2 CLI
+        console.log(`${APP_NAME} CLI
 
   setup --email <email> --password <password> --name "<name>"
   seed:dev

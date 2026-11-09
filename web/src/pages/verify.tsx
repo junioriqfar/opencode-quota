@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { usePageMeta } from "@/hooks/use-page-meta";
 import type { CurrentUser } from "@shared/types";
 
 export function VerifyPage() {
@@ -16,6 +17,7 @@ export function VerifyPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
+  usePageMeta({ title: error ? "Verification failed" : "Verify email" });
 
   useEffect(() => {
     if (!token) {

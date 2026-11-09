@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { APP_NAME } from "../shared/brand.ts";
 
 function loadDotEnvFallback(): void {
   try {
@@ -62,7 +63,7 @@ export const config = {
   setupToken: process.env.SETUP_TOKEN ?? "",
   superadminEmail: (process.env.SUPERADMIN_EMAIL ?? "").trim().toLowerCase(),
   resendApiKey: process.env.RESEND_API_KEY ?? "",
-  emailFrom: process.env.EMAIL_FROM ?? "Quota Status <noreply@example.com>",
+  emailFrom: process.env.EMAIL_FROM ?? `${APP_NAME} <noreply@example.com>`,
   turnstileSiteKey: process.env.TURNSTILE_SITE_KEY ?? "",
   turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY ?? "",
   devExposeEmailLinks: boolEnv("DEV_EXPOSE_EMAIL_LINKS", false),

@@ -10,6 +10,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { useAuth } from "@/lib/auth-context";
 import { post } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function LoginPage() {
   const { user, loading, login, setupRequired } = useAuth();
@@ -22,6 +23,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const next = search.get("next") || "/app";
+  usePageMeta({ title: "Sign in" });
 
   useEffect(() => {
     if (!loading && user) navigate(next, { replace: true });
@@ -115,17 +117,16 @@ export function LoginPage() {
           <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">Password</Label>
+          <PasswordInput id="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <div className="flex justify-end">
             <Link
               to="/forgot"
-              tabIndex={-1}
               className="text-xs text-muted-foreground underline-offset-4 hover:underline"
             >
               Forgot password?
             </Link>
           </div>
-          <PasswordInput id="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <Button className="w-full" type="submit" disabled={submitting}>
           {submitting && <Loader2 className="animate-spin" />}

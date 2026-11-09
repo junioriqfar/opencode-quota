@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "quota-status-v2",
+      "name": "opencode-quota",
       "dependencies": {
         "@radix-ui/react-alert-dialog": "^1.2.1",
         "@radix-ui/react-dialog": "^1.3.1",

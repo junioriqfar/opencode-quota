@@ -10,6 +10,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { post } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { usePageMeta } from "@/hooks/use-page-meta";
 import type { CurrentUser } from "@shared/types";
 
 export function SetupPage() {
@@ -22,6 +23,7 @@ export function SetupPage() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  usePageMeta({ title: "Initial setup" });
 
   if (!loading && !setupRequired) return <Navigate to="/login" replace />;
 

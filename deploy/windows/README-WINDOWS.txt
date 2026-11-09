@@ -1,4 +1,4 @@
-Quota Status v2 — Windows
+OpenCode Quota — Windows
 
 Prerequisites
 - PostgreSQL running locally on port 5432.

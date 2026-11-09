@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, type ReactNode } from "react";
 import { Activity, LogOut, Moon, Shield, Sun, Users } from "lucide-react";
 import type { GroupListItem } from "@shared/types";
-import { Button } from "@/components/ui/button";
+import { APP_NAME } from "@shared/brand";import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -42,19 +42,25 @@ export function AppShell({
 
   return (
     <div className="relative min-h-screen overflow-hidden">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:ring-2 focus:ring-ring"
+      >
+        Skip to content
+      </a>
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-35 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
       <div className="relative z-10">
-        <header className="border-b bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/55">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 md:px-6">
-            <Link to="/app" className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-sky-500 to-violet-500 text-white shadow-md shadow-emerald-500/20">
+        <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/65">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 py-3 md:px-6">
+            <Link to="/app" className="flex min-w-0 items-center gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-sky-500 to-violet-500 text-white shadow-md shadow-emerald-500/20">
                 <Activity className="h-[18px] w-[18px]" />
               </span>
-              <span className="hidden text-sm font-semibold sm:block">Quota Status</span>
+              <span className="truncate text-sm font-semibold">{APP_NAME}</span>
             </Link>
 
             {groups.data && groups.data.groups.length > 0 && (
-              <div className="ml-1">
+              <div className="order-2 w-full sm:order-none sm:ml-1 sm:w-auto">
                 <Select
                   value={groupId}
                   onValueChange={(value) => {
@@ -67,7 +73,7 @@ export function AppShell({
                     }
                   }}
                 >
-                  <SelectTrigger className="w-[190px] md:w-[240px]">
+                  <SelectTrigger className="w-full sm:w-[230px]" aria-label="Current group">
                     <Users className="mr-2 h-4 w-4 text-muted-foreground" />
                     <SelectValue placeholder="Select group…" />
                   </SelectTrigger>
@@ -82,10 +88,10 @@ export function AppShell({
               </div>
             )}
 
-            <div className="ml-auto flex items-center gap-1.5">
+            <div className="order-1 ml-auto flex items-center gap-1.5 sm:order-none">
               {user?.isSuperadmin && (
                 <Button variant={location.pathname.startsWith("/admin") ? "secondary" : "ghost"} size="sm" asChild>
-                  <Link to="/admin">
+                  <Link to="/admin" aria-label="Super-admin">
                     <Shield />
                     <span className="hidden sm:inline">Super-admin</span>
                   </Link>
@@ -94,19 +100,19 @@ export function AppShell({
               <span className="hidden max-w-[160px] truncate text-sm text-muted-foreground md:block">
                 {user?.name}
               </span>
-              <Button variant="ghost" size="icon" onClick={toggle} title="Toggle theme">
+              <Button variant="ghost" size="icon" onClick={toggle} title="Toggle theme" aria-label="Toggle theme">
                 {theme === "dark" ? <Sun /> : <Moon />}
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleLogout} title="Sign out">
+              <Button variant="ghost" size="icon" onClick={handleLogout} title="Sign out" aria-label="Sign out">
                 <LogOut />
               </Button>
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-6 md:px-6 lg:py-8">{children}</main>
+        <main id="main" className="mx-auto max-w-6xl px-4 py-6 md:px-6 lg:py-8">{children}</main>
         <footer className="mx-auto max-w-6xl px-4 pb-6 text-xs text-muted-foreground md:px-6">
           <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
-            <span>Private group workspace · data visible to group members only</span>
+            <span>{APP_NAME} · Private group workspace · data visible to group members only</span>
             <span className="tabular-nums">{new Date().getFullYear()}</span>
           </div>
         </footer>

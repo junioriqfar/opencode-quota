@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { AppSettings, SuperadminGroup } from "@shared/types";
 import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
+import { usePageMeta } from "@/hooks/use-page-meta";
 import { post, put } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { formatDateTime, relativeTime } from "@/lib/format";
@@ -55,6 +57,7 @@ export function SuperadminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  usePageMeta({ title: "Super-admin" });
 
   useEffect(() => {
     if (!settings.data) return;
@@ -111,27 +114,38 @@ export function SuperadminPage() {
 
   return (
     <AppShell>
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-semibold tracking-tight">Super-admin</h1>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage tenants, signup policy, group limits, and sync health. Console keys stay encrypted and invisible.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="font-normal">
-            <Users className="mr-1 h-3.5 w-3.5" />
-            {health.data?.users ?? "—"} users
-          </Badge>
-          <Badge variant="outline" className="font-normal">
-            <FolderKanban className="mr-1 h-3.5 w-3.5" />
-            {health.data?.groups ?? "—"} groups
-          </Badge>
-        </div>
-      </div>
+      <PageHeader
+        icon={<Shield className="h-6 w-6 text-primary" />}
+        title="Super-admin"
+        description="Manage tenants, signup policy, group limits, and sync health. Console keys stay encrypted and invisible."
+        meta={
+          <>
+            <Badge variant="outline" className="font-normal">
+              <Users className="mr-1 h-3.5 w-3.5" />
+              {health.data?.users ?? "—"} users
+            </Badge>
+            <Badge variant="outline" className="font-normal">
+              <FolderKanban className="mr-1 h-3.5 w-3.5" />
+              {health.data?.groups ?? "—"} groups
+            </Badge>
+          </>
+        }
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              groups.refresh();
+              settings.refresh();
+              health.refresh();
+              notifySuccess("Super-admin data refreshed.");
+            }}
+          >
+            <RefreshCw />
+            Refresh
+          </Button>
+        }
+      />
 
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -161,9 +175,9 @@ export function SuperadminPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Group</TableHead>
-                    <TableHead>Owner</TableHead>
+                    <TableHead className="hidden lg:table-cell">Owner</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Console</TableHead>
+                    <TableHead className="hidden lg:table-cell">Console</TableHead>
                     <TableHead>Last sync</TableHead>
                     <TableHead />
                   </TableRow>
@@ -175,7 +189,7 @@ export function SuperadminPage() {
                         <div className="font-medium">{group.name}</div>
                         <div className="text-[11px] text-muted-foreground">{group.memberCount} members</div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <div>{group.ownerName}</div>
                         <div className="text-[11px] text-muted-foreground">{group.ownerEmail}</div>
                       </TableCell>
@@ -185,7 +199,7 @@ export function SuperadminPage() {
                           {group.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <div className="flex flex-col gap-1">
                           <Badge variant={group.consoleStatus === "valid" ? "success" : group.consoleStatus === "needs_reauth" ? "destructive" : "warning"} className="w-fit font-normal">
                             {group.consoleStatus === "valid" ? (

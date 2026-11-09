@@ -3,18 +3,8 @@ import type { HistoryResponse } from "@shared/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDay, formatDayLong, formatUsd } from "@/lib/format";
+import { colorForId } from "@/lib/chart-colors";
 import { cn } from "@/lib/utils";
-
-const COLORS = [
-  "#10b981",
-  "#0ea5e9",
-  "#8b5cf6",
-  "#f59e0b",
-  "#f43f5e",
-  "#14b8a6",
-  "#6366f1",
-  "#d946ef",
-];
 
 function axisLabel(value: number): string {
   if (value >= 100) return `$${value.toFixed(0)}`;
@@ -24,7 +14,7 @@ function axisLabel(value: number): string {
 
 export function DailyChart({ history, className }: { history: HistoryResponse; className?: string }) {
   const colors = new Map(
-    history.members.map((member, index) => [member.userId, COLORS[index % COLORS.length]!]),
+    history.members.map((member) => [member.userId, colorForId(member.userId)]),
   );
   const max = Math.max(...history.days.map((day) => day.totalUsd), 0.01);
   const ticks = [1, 0.75, 0.5, 0.25, 0];

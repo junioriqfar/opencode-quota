@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { post } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function ResetPage() {
   const [search] = useSearchParams();
@@ -17,6 +18,7 @@ export function ResetPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  usePageMeta({ title: !token ? "Invalid reset link" : done ? "Password updated" : "Reset password" });
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();

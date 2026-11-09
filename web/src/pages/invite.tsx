@@ -8,6 +8,7 @@ import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/lib/auth-context";
 import { post } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 interface InvitePreview {
   invite: {
@@ -26,6 +27,13 @@ export function InvitePage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const next = `/invite/${encodeURIComponent(token)}`;
+  usePageMeta({
+    title: preview.error
+      ? "Invitation unavailable"
+      : preview.data?.invite
+        ? `Join ${preview.data.invite.groupName}`
+        : "Group invitation",
+  });
 
   const accept = async () => {
     setError(null);

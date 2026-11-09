@@ -45,6 +45,7 @@ import type {
 } from "@shared/types";
 import { AppShell } from "@/components/app-shell";
 import { MemberModelUsageDialog } from "@/components/member-model-usage";
+import { PageHeader } from "@/components/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -61,6 +62,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Select,
   SelectContent,
@@ -72,6 +74,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApi } from "@/hooks/use-api";
+import { usePageMeta } from "@/hooks/use-page-meta";
 import { del, patch, post, put } from "@/lib/api";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 import { formatDateTime, formatIdr, formatPct, formatUsd, relativeTime } from "@/lib/format";
@@ -107,6 +110,12 @@ export function GroupAdminPage() {
   const setTab = (value: string) => setSearch({ tab: value });
 
   const group = useApi<GroupBase>(groupId ? `/api/groups/${groupId}` : null);
+  usePageMeta({
+    title: group.data?.group.name ? `${group.data.group.name} · Admin` : "Group admin",
+    group: group.data?.group
+      ? { id: group.data.group.id, name: group.data.group.name, admin: true }
+      : null,
+  });
   const members = useApi<{ members: MemberListItem[] }>(groupId ? `/api/groups/${groupId}/members` : null);
   const invites = useApi<{ invites: InviteItem[] }>(groupId ? `/api/groups/${groupId}/invites` : null);
   const accounts = useApi<{ accounts: ServiceAccountItem[] }>(groupId ? `/api/groups/${groupId}/service-accounts` : null);
@@ -174,49 +183,42 @@ export function GroupAdminPage() {
 
   return (
     <AppShell groupId={groupId}>
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="icon" title="Back to groups">
-              <Link to={connection.connected ? `/app/g/${groupId}` : "/app"}>
-                <ArrowLeft />
-              </Link>
-            </Button>
-            <h1 className="text-2xl font-semibold tracking-tight">Manage {group.data.group.name}</h1>
-          </div>
-          <p className="ml-10 mt-1 text-sm text-muted-foreground">
-            Owner-only controls. Changes are recorded in the audit log.
-          </p>
-        </div>
-        <Badge variant={connection.connected ? "success" : "warning"} className="font-normal">
-          {connection.connected ? <CheckCircle2 className="h-3 w-3" /> : <Plug className="h-3 w-3" />}
-          Console {connection.connected ? connection.status : "not connected"}
-        </Badge>
-      </div>
+      <PageHeader
+        backTo={connection.connected ? `/app/g/${groupId}` : "/app"}
+        backLabel={connection.connected ? "Back to dashboard" : "Back to groups"}
+        title={`Manage ${group.data.group.name}`}
+        description="Owner-only controls. Changes are recorded in the audit log."
+        meta={
+          <Badge variant={connection.connected ? "success" : "warning"} className="font-normal">
+            {connection.connected ? <CheckCircle2 className="h-3 w-3" /> : <Plug className="h-3 w-3" />}
+            Console {connection.connected ? connection.status : "not connected"}
+          </Badge>
+        }
+      />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start">
-          <TabsTrigger value="connection" className="gap-1.5">
+        <TabsList className="mb-4 !h-auto w-full grid grid-cols-3 gap-1 sm:flex sm:flex-wrap sm:justify-start">
+          <TabsTrigger value="connection" className="h-10 gap-1.5 sm:h-9">
             <PlugZap className="h-4 w-4" />
             Connection
           </TabsTrigger>
-          <TabsTrigger value="members" className="gap-1.5">
+          <TabsTrigger value="members" className="h-10 gap-1.5 sm:h-9">
             <Users className="h-4 w-4" />
             Members
           </TabsTrigger>
-          <TabsTrigger value="mapping" className="gap-1.5">
+          <TabsTrigger value="mapping" className="h-10 gap-1.5 sm:h-9">
             <GitBranch className="h-4 w-4" />
             Mapping
           </TabsTrigger>
-          <TabsTrigger value="billing" className="gap-1.5">
+          <TabsTrigger value="billing" className="h-10 gap-1.5 sm:h-9">
             <Receipt className="h-4 w-4" />
             Billing
           </TabsTrigger>
-          <TabsTrigger value="audit" className="gap-1.5">
+          <TabsTrigger value="audit" className="h-10 gap-1.5 sm:h-9">
             <ScrollText className="h-4 w-4" />
             Audit
           </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-1.5">
+          <TabsTrigger value="settings" className="h-10 gap-1.5 sm:h-9">
             <Settings2 className="h-4 w-4" />
             Settings
           </TabsTrigger>
@@ -436,9 +438,8 @@ function ConnectionTab({
           <form className="space-y-3" onSubmit={saveKey}>
             <div className="space-y-1.5">
               <Label htmlFor="console-key">Read-only service account key</Label>
-              <Input
+              <PasswordInput
                 id="console-key"
-                type="password"
                 autoComplete="off"
                 placeholder="oc_sk_..."
                 required
@@ -1046,6 +1047,10 @@ function MappingTab({
         )}
         {accounts.loading ? (
           <Skeleton className="h-48 w-full" />
+        ) : (accounts.data?.accounts ?? []).length === 0 ? (
+          <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+            No service accounts yet. Connect the Console key and run a sync first.
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -1418,6 +1423,10 @@ function AuditTab({ audit }: { audit: ReturnType<typeof useApi<{ logs: AuditLogI
       <CardContent>
         {audit.loading ? (
           <Skeleton className="h-48 w-full" />
+        ) : (audit.data?.logs ?? []).length === 0 ? (
+          <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+            No audit entries yet. Connection, invite, mapping, and billing changes will appear here.
+          </div>
         ) : (
           <Table>
             <TableHeader>

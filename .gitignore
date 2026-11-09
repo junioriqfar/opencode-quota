@@ -11,3 +11,5 @@ dist/
 *.dump
 backups/
 docs/screenshots/
+!web/public/
+!web/public/**

@@ -1,7 +1,7 @@
 # Run as Administrator in PowerShell.
 # Edit $AppDir if the app is not in C:\opencode-quota.
 $AppDir = "C:\opencode-quota"
-$TaskName = "Quota Status v2"
+$TaskName = "OpenCode Quota"
 
 if (-not (Test-Path "$AppDir\quota.exe")) {
   throw "quota.exe not found in $AppDir. Extract the build first."

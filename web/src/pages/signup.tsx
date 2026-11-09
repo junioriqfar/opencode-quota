@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { useAuth } from "@/lib/auth-context";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function SignupPage() {
   const { user, loading, config, signup, setupRequired } = useAuth();
@@ -21,6 +22,7 @@ export function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ email: string; devVerifyUrl?: string; emailSent: boolean } | null>(null);
+  usePageMeta({ title: success ? "Check your email" : "Create account" });
 
   if (!loading && user) return <Navigate to="/app" replace />;
   if (!loading && setupRequired) return <Navigate to="/setup" replace />;

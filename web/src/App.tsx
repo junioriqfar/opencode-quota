@@ -1,6 +1,9 @@
 import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { Activity } from "lucide-react";
+import { APP_NAME } from "@shared/brand";
 import { Button } from "@/components/ui/button";
 import { RequireAuth, RequireSuperadmin } from "@/components/require-auth";
+import { usePageMeta } from "@/hooks/use-page-meta";
 import { ForgotPage } from "@/pages/forgot";
 import { GroupAdminPage } from "@/pages/group-admin";
 import { GroupDashboardPage } from "@/pages/group-dashboard";
@@ -14,12 +17,22 @@ import { SuperadminPage } from "@/pages/superadmin";
 import { VerifyPage } from "@/pages/verify";
 
 function NotFound() {
+  usePageMeta({ title: "Page not found" });
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="text-center">
-        <p className="text-sm font-medium text-muted-foreground">404</p>
-        <h1 className="mt-1 text-2xl font-semibold">Page not found</h1>
-        <Button asChild variant="link" className="mt-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-muted/30 px-4">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-50 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
+      <div className="relative w-full max-w-md rounded-2xl border bg-card p-8 text-center shadow-xl shadow-foreground/5">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-sky-500 to-violet-500 text-white shadow-lg shadow-emerald-500/20">
+          <Activity className="h-6 w-6" />
+        </div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {APP_NAME}
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Page not found</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          The page you are looking for does not exist or has moved.
+        </p>
+        <Button asChild className="mt-5">
           <Link to="/app">Back to groups</Link>
         </Button>
       </div>

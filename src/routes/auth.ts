@@ -28,6 +28,7 @@ import { badRequest, conflict, forbidden, unauthorized } from "../errors.ts";
 import { clientIp, parseJson, rateLimit } from "../http.ts";
 import { verifyTurnstile } from "../turnstile.ts";
 import { getAppSettings } from "../billing.ts";
+import { APP_NAME } from "../../shared/brand.ts";
 
 const auth = new Hono<AppEnv>();
 
@@ -51,7 +52,7 @@ auth.get("/config", async (c) => {
   const settings = await getAppSettings();
   const setupRequired = await isSetupAvailable();
   return c.json({
-    appName: "Quota Status",
+    appName: APP_NAME,
     turnstileSiteKey: config.turnstileSiteKey,
     signupOpen: settings.signupOpen,
     setupRequired,

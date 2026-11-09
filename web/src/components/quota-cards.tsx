@@ -75,7 +75,12 @@ function MeterCard({
             <div>of {formatUsd(meter.limitUsd, true)}</div>
           </div>
         </div>
-        <Progress value={Math.min(100, meter.percent)} indicatorClassName={colors.bar} className="h-2.5" />
+        <Progress
+          value={Math.min(100, meter.percent)}
+          indicatorClassName={colors.bar}
+          className="h-2.5"
+          aria-label={`${label} quota ${formatPct(meter.percent)}`}
+        />
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <CalendarClock className="h-3.5 w-3.5" />
           <span>Resets {formatDateTime(meter.resetsAt)}</span>
@@ -87,7 +92,7 @@ function MeterCard({
 
 export function QuotaCards({ summary }: { summary: GroupSummary }) {
   return (
-    <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <section className="grid gap-3 md:grid-cols-3">
       <MeterCard label="Monthly" hint="Main period limit" meter={summary.quota.month} icon={CalendarRange} />
       <MeterCard label="Weekly" hint="7-day sub-limit" meter={summary.quota.week} icon={TrendingUp} />
       <MeterCard label="5 hours" hint="Rolling window" meter={summary.quota.fiveHour} icon={Timer} />

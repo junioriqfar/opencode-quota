@@ -3,28 +3,18 @@ import type { GroupSummary } from "@shared/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPct, formatUsd } from "@/lib/format";
+import { colorForId } from "@/lib/chart-colors";
 import { cn } from "@/lib/utils";
-
-const COLORS = [
-  "#10b981",
-  "#0ea5e9",
-  "#8b5cf6",
-  "#f59e0b",
-  "#f43f5e",
-  "#14b8a6",
-  "#6366f1",
-  "#d946ef",
-];
 
 export function ShareChart({ summary, className }: { summary: GroupSummary; className?: string }) {
   const data = summary.members
     .filter((member) => member.listCostUsd > 0)
-    .map((member, index) => ({
+    .map((member) => ({
       userId: member.userId,
       name: member.name,
       value: member.listCostUsd,
       share: member.sharePct,
-      color: COLORS[index % COLORS.length]!,
+      color: colorForId(member.userId),
     }));
   const total = data.reduce((sum, entry) => sum + entry.value, 0);
   let cursor = 0;

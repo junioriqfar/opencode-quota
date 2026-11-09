@@ -1,4 +1,5 @@
 import { config } from "./config.ts";
+import { APP_NAME } from "../shared/brand.ts";
 
 interface SendEmailInput {
   to: string;
@@ -54,7 +55,7 @@ function layout(title: string, body: string): string {
   <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:28px">
     <h1 style="margin:0 0 12px;font-size:20px;color:#0f172a">${title}</h1>
     <div style="font-size:14px;line-height:1.6;color:#334155">${body}</div>
-    <p style="margin-top:24px;font-size:12px;color:#94a3b8">Quota Status</p>
+    <p style="margin-top:24px;font-size:12px;color:#94a3b8">${APP_NAME}</p>
   </div>
 </body></html>`;
 }
@@ -63,7 +64,7 @@ export async function sendVerificationEmail(email: string, token: string): Promi
   const link = `${config.appUrl}/verify?token=${encodeURIComponent(token)}`;
   const result = await sendEmail({
     to: email,
-    subject: "Verify your Quota Status email",
+    subject: `Verify your ${APP_NAME} email`,
     html: layout(
       "Verify your email",
       `<p>Click the button below to verify your email address.</p>
@@ -79,7 +80,7 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
   const link = `${config.appUrl}/reset?token=${encodeURIComponent(token)}`;
   const result = await sendEmail({
     to: email,
-    subject: "Reset your Quota Status password",
+    subject: `Reset your ${APP_NAME} password`,
     html: layout(
       "Reset your password",
       `<p>Click the button below to choose a new password.</p>
@@ -95,7 +96,7 @@ export async function sendInviteEmail(email: string, groupName: string, token: s
   const link = `${config.appUrl}/invite/${encodeURIComponent(token)}`;
   const result = await sendEmail({
     to: email,
-    subject: `You are invited to ${groupName} on Quota Status`,
+    subject: `You are invited to ${groupName} on ${APP_NAME}`,
     html: layout(
       `Invitation to ${groupName}`,
       `<p>You have been invited to join <strong>${groupName}</strong>.</p>
