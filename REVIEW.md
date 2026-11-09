@@ -1,4 +1,4 @@
-# Review Guide — Quota Status v2
+# Review Guide — OpenCode Quota
 
 ## URLs
 

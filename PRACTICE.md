@@ -39,7 +39,7 @@ Log in to the OpenCode Console with your own Console account.
 Recommended: create a dedicated read-only service account key.
 
 1. Settings → Service accounts.
-2. Use the existing **Quota Status** account, or create a new one, e.g. `Quota Practice`.
+2. Use the existing read-only service account, or create a new one, e.g. `OpenCode Quota`.
 3. Add an API key with **Read** / **Read only** permission.
 4. Name it something clear, e.g. `Quota Practice`.
 5. Copy the key once.

@@ -1,4 +1,4 @@
-# Quota Status v2 — Multi-tenant OpenCode Quota & Urunan
+# OpenCode Quota — Multi-tenant Quota & Bill Splitting
 
 Rencana kerja dan catatan implementasi.
 
