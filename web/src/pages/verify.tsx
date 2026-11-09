@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type { CurrentUser } from "@shared/types";
 
 export function VerifyPage() {
@@ -26,9 +27,13 @@ export function VerifyPage() {
     api<{ user: CurrentUser }>(`/api/auth/verify?token=${encodeURIComponent(token)}`)
       .then((result) => {
         setUser(result.user);
+        notifySuccess("Email verified.");
         navigate("/app", { replace: true });
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Verification failed."));
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Verification failed.");
+        notifyError(err, "Verification failed.");
+      });
   }, [token, setUser, navigate]);
 
   return (

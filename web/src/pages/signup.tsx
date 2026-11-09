@@ -7,7 +7,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useAuth } from "@/lib/auth-context";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 export function SignupPage() {
   const { user, loading, config, signup, setupRequired } = useAuth();
@@ -42,8 +44,10 @@ export function SignupPage() {
     try {
       const result = await signup({ name, email, password, turnstileToken });
       setSuccess({ email: result.email, devVerifyUrl: result.devVerifyUrl, emailSent: result.emailSent });
+      notifySuccess("Account created. Check your email.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed.");
+      notifyError(err, "Sign up failed.");
     } finally {
       setSubmitting(false);
     }
@@ -111,11 +115,11 @@ export function SignupPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput id="password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirm">Confirm</Label>
-            <Input id="confirm" type="password" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            <PasswordInput id="confirm" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </div>
         </div>
         <Turnstile siteKey={config?.turnstileSiteKey ?? ""} onToken={setTurnstileToken} />

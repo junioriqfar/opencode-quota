@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { post, put } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import { formatDateTime, relativeTime } from "@/lib/format";
 
 interface Health {
@@ -73,8 +74,10 @@ export function SuperadminPage() {
       });
       settings.refresh();
       setMessage("Settings saved.");
+      notifySuccess("Settings saved.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save settings.");
+      notifyError(err, "Could not save settings.");
     } finally {
       setSaving(false);
     }
@@ -86,8 +89,10 @@ export function SuperadminPage() {
       const action = group.status === "active" ? "disable" : "enable";
       await post(`/api/admin/groups/${group.id}/${action}`);
       groups.refresh();
+      notifySuccess(action === "disable" ? "Group disabled." : "Group enabled.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update the group.");
+      notifyError(err, "Could not update the group.");
     }
   };
 
@@ -97,8 +102,10 @@ export function SuperadminPage() {
       await post(`/api/admin/groups/${group.id}/sync`);
       groups.refresh();
       health.refresh();
+      notifySuccess("Sync triggered.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not trigger sync.");
+      notifyError(err, "Could not trigger sync.");
     }
   };
 

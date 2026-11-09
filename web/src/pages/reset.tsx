@@ -4,9 +4,10 @@ import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { AuthLayout } from "@/components/auth-layout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { post } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 export function ResetPage() {
   const [search] = useSearchParams();
@@ -32,8 +33,10 @@ export function ResetPage() {
     try {
       await post("/api/auth/reset", { token, password });
       setDone(true);
+      notifySuccess("Password updated.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not reset your password.");
+      notifyError(err, "Could not reset your password.");
     } finally {
       setSubmitting(false);
     }
@@ -73,11 +76,11 @@ export function ResetPage() {
           )}
           <div className="space-y-1.5">
             <Label htmlFor="password">New password</Label>
-            <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput id="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirm">Confirm password</Label>
-            <Input id="confirm" type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            <PasswordInput id="confirm" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </div>
           <Button className="w-full" type="submit" disabled={submitting}>
             {submitting && <Loader2 className="animate-spin" />}

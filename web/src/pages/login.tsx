@@ -6,8 +6,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useAuth } from "@/lib/auth-context";
 import { post } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 export function LoginPage() {
   const { user, loading, login, setupRequired } = useAuth();
@@ -39,8 +41,10 @@ export function LoginPage() {
       );
       setResendMessage(result.message);
       setDevVerifyUrl(result.devVerifyUrl ?? null);
+      notifySuccess("Verification email sent.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not resend the verification email.");
+      notifyError(err, "Could not resend the verification email.");
     }
   };
 
@@ -52,9 +56,11 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
+      notifySuccess("Signed in.");
       navigate(next, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed.");
+      notifyError(err, "Sign in failed.");
     } finally {
       setSubmitting(false);
     }
@@ -111,11 +117,15 @@ export function LoginPage() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <Link to="/forgot" className="text-xs text-muted-foreground underline-offset-4 hover:underline">
+            <Link
+              to="/forgot"
+              tabIndex={-1}
+              className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
-          <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <PasswordInput id="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <Button className="w-full" type="submit" disabled={submitting}>
           {submitting && <Loader2 className="animate-spin" />}

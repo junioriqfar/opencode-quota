@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useApi } from "@/hooks/use-api";
 import { useAuth } from "@/lib/auth-context";
 import { post } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 interface InvitePreview {
   invite: {
@@ -33,9 +34,11 @@ export function InvitePage() {
       const result = await post<{ group: { id: string; name: string } }>(
         `/api/invites/${encodeURIComponent(token)}/accept`,
       );
+      notifySuccess(`Joined ${result.group.name}.`);
       navigate(`/app/g/${result.group.id}`, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not accept the invitation.");
+      notifyError(err, "Could not accept the invitation.");
     } finally {
       setAccepting(false);
     }

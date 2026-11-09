@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { post } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 export function ForgotPage() {
   const [email, setEmail] = useState("");
@@ -21,8 +22,10 @@ export function ForgotPage() {
     try {
       const response = await post<{ message: string; devResetUrl?: string }>("/api/auth/forgot", { email });
       setResult(response);
+      notifySuccess("Reset link sent.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not request a reset link.");
+      notifyError(err, "Could not request a reset link.");
     } finally {
       setSubmitting(false);
     }

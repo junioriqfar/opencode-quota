@@ -13,6 +13,7 @@ import {
 import { useApi } from "@/hooks/use-api";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/lib/auth-context";
+import { notifySuccess } from "@/lib/notify";
 
 export function AppShell({
   children,
@@ -35,6 +36,7 @@ export function AppShell({
 
   const handleLogout = async () => {
     await logout();
+    notifySuccess("Signed out.");
     navigate("/login");
   };
 

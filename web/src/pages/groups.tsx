@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApi } from "@/hooks/use-api";
 import { post } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import { formatPct, relativeTime } from "@/lib/format";
 
 export function GroupsPage() {
@@ -46,9 +47,11 @@ export function GroupsPage() {
       setName("");
       groups.refresh();
       window.dispatchEvent(new Event("groups:changed"));
+      notifySuccess("Group created. Connect your read-only key next.");
       if (result.group?.id) navigate(`/app/g/${result.group.id}/admin?tab=connection`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the group.");
+      notifyError(err, "Could not create the group.");
     } finally {
       setCreating(false);
     }

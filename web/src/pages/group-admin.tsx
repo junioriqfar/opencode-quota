@@ -73,6 +73,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApi } from "@/hooks/use-api";
 import { del, patch, post, put } from "@/lib/api";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 import { formatDateTime, formatIdr, formatPct, formatUsd, relativeTime } from "@/lib/format";
 
 interface GroupBase {
@@ -92,7 +93,10 @@ const TABS = ["connection", "members", "mapping", "billing", "audit", "settings"
 type Tab = (typeof TABS)[number];
 
 function copy(text: string): void {
-  void navigator.clipboard.writeText(text);
+  navigator.clipboard
+    .writeText(text)
+    .then(() => notifySuccess("Copied to clipboard."))
+    .catch(() => notifyError(null, "Could not copy to clipboard."));
 }
 
 export function GroupAdminPage() {
@@ -316,9 +320,11 @@ function ConnectionTab({
       await put(`/api/groups/${groupId}/console`, { key });
       setKey("");
       setMessage("Console key verified and saved. An initial sync has started.");
+      notifySuccess("Console key verified and saved.");
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not connect the key.");
+      notifyError(err, "Could not connect the key.");
     } finally {
       setSaving(false);
     }
@@ -331,9 +337,11 @@ function ConnectionTab({
     try {
       const result = await post<{ rows: number }>(`/api/groups/${groupId}/sync`);
       setMessage(`Sync finished: ${result.rows} usage rows processed.`);
+      notifySuccess(`Sync finished: ${result.rows} usage rows processed.`);
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sync failed.");
+      notifyError(err, "Sync failed.");
     } finally {
       setSyncing(false);
     }
@@ -346,9 +354,11 @@ function ConnectionTab({
     try {
       await del(`/api/groups/${groupId}/console`);
       setMessage("Console connection removed.");
+      notifySuccess("Console connection removed.");
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not disconnect.");
+      notifyError(err, "Could not disconnect.");
     }
   };
 
@@ -491,6 +501,7 @@ function SettingsTab({
     const next = groupName.trim();
     if (next === name) {
       setMessage("The group name is unchanged.");
+      notifyInfo("The group name is unchanged.");
       return;
     }
     setSaving(true);
@@ -498,8 +509,10 @@ function SettingsTab({
       await patch(`/api/groups/${groupId}`, { name: next });
       onChanged();
       setMessage("Group renamed.");
+      notifySuccess("Group renamed.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not rename the group.");
+      notifyError(err, "Could not rename the group.");
     } finally {
       setSaving(false);
     }
@@ -516,9 +529,11 @@ function SettingsTab({
     try {
       await del(`/api/groups/${groupId}`, { confirmName: confirmName.trim() });
       window.dispatchEvent(new Event("groups:changed"));
+      notifySuccess("Group deleted permanently.");
       navigate("/app");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete the group.");
+      notifyError(err, "Could not delete the group.");
       setDeleting(false);
     }
   };
@@ -692,8 +707,10 @@ function MembersTab({
       setNewLink(result.link);
       setEmail("");
       invites.refresh();
+      notifySuccess(result.emailSent ? "Invitation created and emailed." : "Invitation created.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the invite.");
+      notifyError(err, "Could not create the invite.");
     } finally {
       setCreating(false);
     }
@@ -707,8 +724,10 @@ function MembersTab({
       members.refresh();
       invites.refresh();
       onChanged();
+      notifySuccess("Member removed.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not remove the member.");
+      notifyError(err, "Could not remove the member.");
     }
   };
 
@@ -717,8 +736,10 @@ function MembersTab({
     try {
       await del(`/api/groups/${groupId}/invites/${inviteId}`);
       invites.refresh();
+      notifySuccess("Invitation revoked.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not revoke the invite.");
+      notifyError(err, "Could not revoke the invite.");
     }
   };
 
@@ -968,16 +989,19 @@ function MappingTab({
     setMessage(null);
     if (!userId) {
       setError("Choose a member first.");
+      notifyError(null, "Choose a member first.");
       return;
     }
     setSavingId(accountId);
     try {
       await put(`/api/groups/${groupId}/mappings/${accountId}`, { userId });
       setMessage("Mapping saved.");
+      notifySuccess("Mapping saved.");
       accounts.refresh();
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save the mapping.");
+      notifyError(err, "Could not save the mapping.");
     } finally {
       setSavingId(null);
     }
@@ -989,10 +1013,12 @@ function MappingTab({
     try {
       await del(`/api/groups/${groupId}/mappings/${accountId}`);
       setMessage("Mapping removed.");
+      notifySuccess("Mapping removed.");
       accounts.refresh();
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not remove the mapping.");
+      notifyError(err, "Could not remove the mapping.");
     }
   };
 
@@ -1161,6 +1187,7 @@ function BillingTab({
     const value = parseIdr(totalIdr);
     if (!Number.isFinite(value)) {
       setError("Enter a valid IDR amount.");
+      notifyError(null, "Enter a valid IDR amount.");
       return;
     }
     setError(null);
@@ -1169,10 +1196,12 @@ function BillingTab({
     try {
       await put(`/api/groups/${groupId}/periods/${period.id}/bill`, { totalIdr: value });
       setMessage("Total bill saved.");
+      notifySuccess("Total bill saved.");
       summary.refresh();
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save the bill.");
+      notifyError(err, "Could not save the bill.");
     } finally {
       setSaving(false);
     }
@@ -1186,10 +1215,12 @@ function BillingTab({
     try {
       await post(`/api/groups/${groupId}/periods/${period.id}/finalize`);
       setMessage("Period finalized. Amounts are now locked.");
+      notifySuccess("Period finalized. Amounts are now locked.");
       summary.refresh();
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not finalize the period.");
+      notifyError(err, "Could not finalize the period.");
     } finally {
       setFinalizing(false);
     }
@@ -1213,20 +1244,22 @@ function BillingTab({
       );
       if (result.sync?.error) {
         const detail = result.sync.error.replace(/\.$/, "");
-        setMessage(
-          `Period reopened, but the usage re-sync failed: ${detail}. Use Sync now to retry.`,
-        );
+        const text = `Period reopened, but the usage re-sync failed: ${detail}. Use Sync now to retry.`;
+        setMessage(text);
+        notifyInfo(text);
       } else if (typeof result.sync?.rows === "number") {
-        setMessage(
-          `Period reopened. Re-synced ${result.sync.rows} usage rows from the last 90 days.`,
-        );
+        const text = `Period reopened. Re-synced ${result.sync.rows} usage rows from the last 90 days.`;
+        setMessage(text);
+        notifySuccess(text);
       } else {
         setMessage("Period reopened.");
+        notifySuccess("Period reopened.");
       }
       summary.refresh();
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not reopen the period.");
+      notifyError(err, "Could not reopen the period.");
     } finally {
       setReopening(false);
     }

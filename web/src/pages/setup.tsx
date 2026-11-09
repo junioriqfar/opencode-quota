@@ -6,8 +6,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { post } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type { CurrentUser } from "@shared/types";
 
 export function SetupPage() {
@@ -43,9 +45,11 @@ export function SetupPage() {
         password,
       });
       setUser(result.user);
+      notifySuccess("Super-admin created.");
       navigate("/app", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Setup failed.");
+      notifyError(err, "Setup failed.");
     } finally {
       setSubmitting(false);
     }
@@ -79,11 +83,11 @@ export function SetupPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput id="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirm">Confirm</Label>
-            <Input id="confirm" type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            <PasswordInput id="confirm" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </div>
         </div>
         <Button className="w-full" type="submit" disabled={submitting}>

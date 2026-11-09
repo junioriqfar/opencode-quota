@@ -37,6 +37,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApi } from "@/hooks/use-api";
 import { ApiError } from "@/lib/api";
+import { notifySuccess } from "@/lib/notify";
 import { relativeTime } from "@/lib/format";
 
 interface GroupBase {
@@ -175,7 +176,16 @@ export function GroupDashboardPage() {
               </SelectContent>
             </Select>
           )}
-          <Button variant="outline" size="sm" onClick={() => { summary.refresh(); history.refresh(); group.refresh(); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              summary.refresh();
+              history.refresh();
+              group.refresh();
+              notifySuccess("Dashboard refreshed.");
+            }}
+          >
             <RefreshCw />
             Refresh
           </Button>
