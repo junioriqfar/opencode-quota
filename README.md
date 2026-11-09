@@ -223,7 +223,18 @@ If Turnstile is not configured, the server bypasses verification in development.
   - daily member snapshots,
   - mapping-independent amounts.
 - After finalization, sync ignores new usage for that period. The chart and bill stay frozen.
-- The owner can reopen a finalized period; this deletes the snapshot and returns to draft.
+- The owner can reopen a finalized period. Reopening deletes the snapshot, returns to draft, and **re-syncs the last 90 days** so late service-account usage is imported.
+
+### New service account after finalization
+
+If a service account is created or used after the period was finalized:
+
+1. **Reopen** the period. The app re-syncs the last 90 days automatically.
+2. Invite the member if the service account belongs to a new person.
+3. Map the service account.
+4. **Finalize** again.
+
+Without reopening, usage that falls inside the finalized period is not imported. The 90-day re-sync covers a normal OpenCode Go cycle (about 30–31 days).
 
 ### Period boundaries
 

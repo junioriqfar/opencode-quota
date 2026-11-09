@@ -137,7 +137,14 @@ After finalizing:
 - member amounts are locked,
 - daily chart uses the snapshot,
 - new sync does not change the period,
-- owner can **Reopen** to return to draft.
+- owner can **Reopen** to return to draft. Reopening also re-syncs the last 90 days.
+
+If a new service account appears after finalization:
+
+1. Reopen the period and wait for the automatic re-sync.
+2. Invite the member if needed.
+3. Map the new service account.
+4. Finalize again.
 
 To see the blocker:
 

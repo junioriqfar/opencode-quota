@@ -229,7 +229,7 @@ export async function insertMeterSnapshot(
 
 export async function syncGroup(
   groupId: string,
-  opts: { force?: boolean } = {},
+  opts: { force?: boolean; range?: "7d" | "30d" | "90d" } = {},
 ): Promise<{ rows: number; periodId: string }> {
   const connection = await getConnection(groupId);
   if (!connection) throw new HttpError(409, "not_connected", "This group has no Console connection.");
@@ -256,14 +256,17 @@ export async function syncGroup(
     const period = await ensurePeriod(groupId, go.access.startsAt, go.access.endsAt);
     const accounts = await getServiceAccounts(key);
     await upsertServiceAccounts(groupId, accounts, connection.reader_account_id);
-    let range: "7d" | "30d" | "90d" = "7d";
-    if (!connection.last_sync_at) {
+    let range: "7d" | "30d" | "90d";
+    if (opts.range) {
+      range = opts.range;
+    } else if (!connection.last_sync_at) {
       range = "90d";
     } else {
       const ageDays =
         (Date.now() - new Date(connection.last_sync_at).getTime()) / 86_400_000;
       if (ageDays > 30) range = "90d";
       else if (ageDays > 7) range = "30d";
+      else range = "7d";
     }
     const csv = await getUsageExportCsv(key, range);
     const rows = parseUsageExport(csv);

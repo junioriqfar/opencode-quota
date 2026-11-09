@@ -474,7 +474,15 @@ groups.post("/:groupId/periods/:periodId/reopen", async (c) => {
   const auth = await requireGroupOwner(c, groupId);
   assertCsrf(c, auth);
   await reopenPeriod(groupId, c.req.param("periodId"), auth.user.id);
-  return c.json({ ok: true });
+  let sync:
+    | { rows: number; periodId: string; error?: undefined }
+    | { rows?: undefined; periodId?: undefined; error: string };
+  try {
+    sync = await syncGroup(groupId, { force: true, range: "90d" });
+  } catch (error) {
+    sync = { error: error instanceof Error ? error.message : String(error) };
+  }
+  return c.json({ ok: true, sync });
 });
 
 groups.get("/:groupId/audit", async (c) => {

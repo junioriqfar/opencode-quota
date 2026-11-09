@@ -80,6 +80,7 @@ After finalization:
 - Member amounts are locked.
 - Daily chart uses the signed snapshot.
 - New sync does not change the finalized period.
+- Reopening returns to draft and re-syncs the last 90 days, which covers late service-account usage.
 
 ### 6. Member view
 

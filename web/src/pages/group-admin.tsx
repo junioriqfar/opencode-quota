@@ -267,6 +267,7 @@ export function GroupAdminPage() {
               summary.refresh();
               periods.refresh();
               group.refresh();
+              accounts.refresh();
             }}
           />
         </TabsContent>
@@ -1130,6 +1131,7 @@ function BillingTab({
   const [totalIdr, setTotalIdr] = useState("");
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
+  const [reopening, setReopening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -1195,16 +1197,38 @@ function BillingTab({
 
   const reopen = async () => {
     if (!period) return;
-    if (!window.confirm("Reopen this period? Amounts will become editable and members will see a draft again.")) return;
+    if (
+      !window.confirm(
+        "Reopen this period? Amounts will become editable and members will see a draft again. Usage will be re-synced for the last 90 days.",
+      )
+    ) {
+      return;
+    }
     setError(null);
     setMessage(null);
+    setReopening(true);
     try {
-      await post(`/api/groups/${groupId}/periods/${period.id}/reopen`);
-      setMessage("Period reopened.");
+      const result = await post<{ sync?: { rows?: number; error?: string } }>(
+        `/api/groups/${groupId}/periods/${period.id}/reopen`,
+      );
+      if (result.sync?.error) {
+        const detail = result.sync.error.replace(/\.$/, "");
+        setMessage(
+          `Period reopened, but the usage re-sync failed: ${detail}. Use Sync now to retry.`,
+        );
+      } else if (typeof result.sync?.rows === "number") {
+        setMessage(
+          `Period reopened. Re-synced ${result.sync.rows} usage rows from the last 90 days.`,
+        );
+      } else {
+        setMessage("Period reopened.");
+      }
       summary.refresh();
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not reopen the period.");
+    } finally {
+      setReopening(false);
     }
   };
 
@@ -1264,9 +1288,9 @@ function BillingTab({
               Save bill
             </Button>
             {period?.status === "finalized" ? (
-              <Button variant="outline" onClick={reopen}>
-                <Lock />
-                Reopen period
+              <Button variant="outline" onClick={reopen} disabled={reopening}>
+                {reopening ? <Loader2 className="animate-spin" /> : <Lock />}
+                {reopening ? "Reopening…" : "Reopen period"}
               </Button>
             ) : (
               <Button onClick={finalize} disabled={finalizing || !summary.data?.finalize.canFinalize}>
