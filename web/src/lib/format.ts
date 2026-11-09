@@ -1,15 +1,16 @@
-const usdFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
+const usdFormatter = new Intl.NumberFormat("id-ID", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 
-const usdFineFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
+const usdFineFormatter = new Intl.NumberFormat("id-ID", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 4,
+});
+
+const usdShareFormatter = new Intl.NumberFormat("id-ID", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 3,
 });
 
 const idrFormatter = new Intl.NumberFormat("id-ID", {
@@ -22,7 +23,12 @@ const compactFormatter = new Intl.NumberFormat("en-US", {
 });
 
 export function formatUsd(value: number, fine = false): string {
-  return (fine ? usdFineFormatter : usdFormatter).format(value);
+  const formatter = fine ? usdFineFormatter : usdFormatter;
+  return `$${formatter.format(value)}`;
+}
+
+export function formatUsdShare(value: number): string {
+  return `$${usdShareFormatter.format(value)}`;
 }
 
 export function formatIdr(value: number | null): string {
@@ -31,7 +37,10 @@ export function formatIdr(value: number | null): string {
 }
 
 export function formatPct(value: number): string {
-  return `${value.toFixed(2)}%`;
+  return `${value.toLocaleString("id-ID", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}%`;
 }
 
 export function formatCompact(value: number): string {

@@ -2,7 +2,7 @@ import { PieChart, Users } from "lucide-react";
 import type { GroupSummary } from "@shared/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPct, formatUsd } from "@/lib/format";
+import { formatPct, formatUsdShare } from "@/lib/format";
 import { colorForId } from "@/lib/chart-colors";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ export function ShareChart({ summary, className }: { summary: GroupSummary; clas
               <div className="absolute inset-[27%] rounded-full bg-card shadow-[inset_0_1px_6px_rgba(0,0,0,0.06)]" />
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total</div>
-                <div className="text-lg font-semibold tabular-nums">{formatUsd(summary.total.listCostUsd, true)}</div>
+                <div className="text-lg font-semibold tabular-nums">{formatUsdShare(summary.total.listCostUsd)}</div>
                 <div className="text-[10px] text-muted-foreground">list cost</div>
               </div>
             </div>
@@ -71,7 +71,7 @@ export function ShareChart({ summary, className }: { summary: GroupSummary; clas
                     <span className="truncate">{entry.name}</span>
                   </div>
                   <div className="flex shrink-0 items-center gap-2 tabular-nums">
-                    <span className="text-muted-foreground">{formatUsd(entry.value, true)}</span>
+                    <span className="text-muted-foreground">{formatUsdShare(entry.value)}</span>
                     <span className="w-14 text-right font-medium">{formatPct(entry.share)}</span>
                   </div>
                 </div>

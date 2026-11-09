@@ -110,6 +110,12 @@ function copy(text: string): void {
     .catch(() => notifyError(null, "Could not copy to clipboard."));
 }
 
+function formatIdrInput(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  if (!digits) return "";
+  return new Intl.NumberFormat("id-ID").format(Number.parseInt(digits, 10));
+}
+
 export function GroupAdminPage() {
   const { groupId = "" } = useParams();
   const [search, setSearch] = useSearchParams();
@@ -143,6 +149,15 @@ export function GroupAdminPage() {
       ? `/api/groups/${groupId}/summary?periodId=${encodeURIComponent(selectedPeriod)}`
       : null,
   );
+
+  useEffect(() => {
+    if (tab === "audit") audit.refresh();
+    if (tab === "members") {
+      members.refresh();
+      invites.refresh();
+    }
+    if (tab === "mapping") accounts.refresh();
+  }, [tab, audit.refresh, members.refresh, invites.refresh, accounts.refresh]);
 
   if (group.loading && !group.data) {
     return (
@@ -359,6 +374,7 @@ function ConnectionTab({
   };
 
   const disconnect = async () => {
+    setDisconnectOpen(false);
     setError(null);
     setMessage(null);
     try {
@@ -762,7 +778,7 @@ function MembersTab({
     },
     {
       key: "mapped",
-      header: "Mapped",
+      header: "Mapped accounts",
       headerClassName: "text-right",
       className: "text-right tabular-nums",
       sortValue: (member) => member.mappedAccounts,
@@ -950,7 +966,10 @@ function MembersTab({
               <Users className="h-4 w-4 text-muted-foreground" />
               Members
             </CardTitle>
-            <CardDescription>All members can see each other and usage in this group.</CardDescription>
+            <CardDescription>
+              All members can see each other and usage. “Mapped accounts” is the number of
+              OpenCode service accounts assigned to that member.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {members.loading ? (
@@ -1335,7 +1354,11 @@ function BillingTab({
   );
 
   useEffect(() => {
-    setTotalIdr(summary.data?.bill.totalIdr === null || summary.data?.bill.totalIdr === undefined ? "" : String(summary.data.bill.totalIdr));
+    setTotalIdr(
+      summary.data?.bill.totalIdr === null || summary.data?.bill.totalIdr === undefined
+        ? ""
+        : formatIdrInput(String(summary.data.bill.totalIdr)),
+    );
   }, [summary.data?.period.id, summary.data?.bill.totalIdr]);
 
   if (periods.length === 0) {
@@ -1396,6 +1419,7 @@ function BillingTab({
 
   const reopen = async () => {
     if (!period) return;
+    setReopenOpen(false);
     setError(null);
     setMessage(null);
     setReopening(true);
@@ -1506,10 +1530,10 @@ function BillingTab({
             <Input
               id="total-idr"
               inputMode="numeric"
-              placeholder="170000"
+              placeholder="185.000"
               value={totalIdr}
               disabled={period?.status === "finalized"}
-              onChange={(event) => setTotalIdr(event.target.value)}
+              onChange={(event) => setTotalIdr(formatIdrInput(event.target.value))}
             />
             <p className="text-[11px] text-muted-foreground">
               Enter the actual amount including tax/fees. The split uses list cost share and largest remainder.
@@ -1763,9 +1787,11 @@ function AuditTab({ audit }: { audit: ReturnType<typeof useApi<{ logs: AuditLogI
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{detail?.action ?? "Audit detail"}</DialogTitle>
+            <DialogTitle>Audit detail</DialogTitle>
             <DialogDescription>
-              {detail ? `${formatDateTime(detail.createdAt)} · ${detail.actorName ?? "System"}` : ""}
+              {detail
+                ? `${detail.action} · ${formatDateTime(detail.createdAt)} · ${detail.actorName ?? "System"}`
+                : ""}
             </DialogDescription>
           </DialogHeader>
           {detail && (
