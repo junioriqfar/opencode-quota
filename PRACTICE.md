@@ -13,7 +13,7 @@ Do not put real credentials or personal emails in this file.
 
 - v2 is running at <http://127.0.0.1:8788>.
 - v1 is stopped.
-- The app uses the practice PostgreSQL database: `quota_status_practice`.
+- The app uses the practice PostgreSQL database: `opencode_quota`.
 - The database may already contain your accounts and groups from earlier practice.
 - If `/setup` is still required, create the super-admin first. If setup is already complete, sign in with your existing account.
 - Resend/Turnstile are in dev mode: verification/reset links appear in the UI/log.
@@ -170,8 +170,8 @@ Check:
 If you want a completely fresh start again, this deletes the current practice accounts and groups:
 
 ```bash
-dropdb -h 127.0.0.1 -p 55432 -U postgres --if-exists quota_status_practice
-createdb -h 127.0.0.1 -p 55432 -U postgres quota_status_practice
+dropdb -h 127.0.0.1 -p 5432 -U postgres --if-exists opencode_quota
+createdb -h 127.0.0.1 -p 5432 -U postgres opencode_quota
 lsof -ti tcp:8788 | xargs -r kill
 cd ~/Projects/BunProjects/quota-status-v2
 nohup bun run start > /tmp/quota-v2-server.log 2>&1 &
@@ -183,7 +183,7 @@ To view the previous demo instead:
 
 1. Change `.env`:
    ```env
-   DATABASE_URL=postgres://postgres@127.0.0.1:55432/quota_status
+   DATABASE_URL=postgres://postgres@127.0.0.1:5432/quota_status
    ```
 2. Restart the server.
 3. Sign in with an account from that database. If you do not remember one, create a new super-admin with the CLI.

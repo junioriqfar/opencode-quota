@@ -99,11 +99,11 @@ Sign back in as the owner / super-admin account you created.
 
 ## Current dev state
 
-- Database: `quota_status_practice`
+- Database: `opencode_quota`
 - Accounts and groups may already exist from your practice run
 - If setup is complete, use `/login`
 - Resend/Turnstile: dev mode (no keys)
-- PostgreSQL dev: `127.0.0.1:55432`
+- PostgreSQL dev: `127.0.0.1:5432`
 - The previous demo database `quota_status` is preserved in `backups/`.
 - Data is temporary (`/tmp`); production uses the office PostgreSQL.
 - Follow `PRACTICE.md` for the from-scratch flow.

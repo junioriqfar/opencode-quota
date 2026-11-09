@@ -192,7 +192,7 @@ Super-admin:
 ## 12. Catatan dev
 
 - Dev server v2 di `http://127.0.0.1:8788` (v1 tetap di 8787).
-- PostgreSQL dev lokal di port `55432`.
+- PostgreSQL dev lokal di port `5432`.
 - Resend/Turnstile kosong → dev mode: link verifikasi muncul di log/response.
 - Super-admin dev dibuat lewat CLI `setup` atau `/setup`.
 - Key Console v1 dapat dipakai untuk migrasi.
@@ -202,7 +202,7 @@ Super-admin:
 
 - Lokasi: `~/Projects/BunProjects/quota-status-v2` (v1 tetap di `quota-status`).
 - Stack: Bun + Hono + PostgreSQL + React/Vite/Tailwind/shadCN.
-- PostgreSQL dev: port `55432`, database `quota_status`.
+- PostgreSQL dev: port `5432`, database `opencode_quota`.
 - Auth: email/password, Argon2id, session cookie, CSRF, verifikasi email, reset password.
 - Resend/Turnstile: dev mode (link email di log/UI, Turnstile opsional); key production disiapkan di `.env`.
 - Multi-tenant: user global, group, membership role per group, invite owner-only, group limit dari super-admin.
@@ -224,6 +224,6 @@ Super-admin:
 
 - Super-admin aplikasi: akun yang kamu buat sendiri.
 - Akun OpenCode Go Console: akun Console milikmu sendiri.
-- Database practice: `quota_status_practice` (sudah dipakai untuk praktik; akun/grup bisa sudah ada).
+- Database practice: `opencode_quota` (akun/grup bisa sudah ada).
 - Database demo lama: `quota_status`, backup di `backups/`.
 - Panduan langkah demi langkah: `PRACTICE.md`.

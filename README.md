@@ -68,12 +68,10 @@ A user can own or join multiple groups. Roles are per group.
 
 ### 1. PostgreSQL
 
-A local dev cluster is already used on port `55432` in this workspace:
+A local PostgreSQL server is used. On this machine it runs on `127.0.0.1:5432` (Homebrew PostgreSQL 18):
 
 ```bash
-initdb -D /tmp/quota-pg-v2 -U postgres --auth=trust --encoding=UTF8 --no-locale
-pg_ctl -D /tmp/quota-pg-v2 -o "-p 55432 -k /tmp" -l /tmp/quota-pg-v2.log start
-createdb -h 127.0.0.1 -p 55432 -U postgres quota_status
+createdb -h 127.0.0.1 -p 5432 -U postgres opencode_quota
 ```
 
 For production, use the existing PostgreSQL on the office PC and create a dedicated user/database:
@@ -101,7 +99,7 @@ openssl rand -base64 32   # APP_ENCRYPTION_KEY
 Minimum local `.env`:
 
 ```env
-DATABASE_URL=postgres://postgres@127.0.0.1:55432/quota_status
+DATABASE_URL=postgres://postgres@127.0.0.1:5432/opencode_quota
 APP_URL=http://127.0.0.1:8788
 PORT=8788
 HOST=127.0.0.1
@@ -453,7 +451,7 @@ Keep the `APP_ENCRYPTION_KEY` separately. Without it, encrypted Console keys can
 ## Development notes
 
 - v1 is still at `http://127.0.0.1:8787`; v2 is at `http://127.0.0.1:8788`.
-- The current `.env` points to the practice database: `quota_status_practice`.
+- The current `.env` points to the practice database: `opencode_quota`.
 - It may already contain your accounts and groups. Use `/login` if setup is complete; use `/setup` with the setup token only if setup is still required.
 - Use your own app account and OpenCode Console account. Do not commit `.env`, database dumps, or screenshots that show real usage data.
 - The previous demo database is `quota_status` and is backed up under `backups/` (git-ignored).
