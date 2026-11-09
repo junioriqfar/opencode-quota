@@ -13,8 +13,6 @@ const usdFineFormatter = new Intl.NumberFormat("en-US", {
 });
 
 const idrFormatter = new Intl.NumberFormat("id-ID", {
-  style: "currency",
-  currency: "IDR",
   maximumFractionDigits: 0,
 });
 
@@ -29,7 +27,7 @@ export function formatUsd(value: number, fine = false): string {
 
 export function formatIdr(value: number | null): string {
   if (value === null) return "—";
-  return idrFormatter.format(value);
+  return `Rp${idrFormatter.format(value)}`;
 }
 
 export function formatPct(value: number): string {

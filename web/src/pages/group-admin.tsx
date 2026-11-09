@@ -59,6 +59,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -714,6 +722,7 @@ function MembersTab({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newLink, setNewLink] = useState<string | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ userId: string; name: string } | null>(null);
   const expandedMember =
@@ -920,9 +929,23 @@ function MembersTab({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <Card className="min-w-0">
-          <CardHeader>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          Manage members and pending invitations. Everyone in the group can see each other and usage.
+        </p>
+        <Button
+          onClick={() => {
+            setError(null);
+            setNewLink(null);
+            setInviteOpen(true);
+          }}
+        >
+          <UserPlus />
+          Invite member
+        </Button>
+      </div>
+      <Card>
+        <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               Members
@@ -960,46 +983,12 @@ function MembersTab({
           </CardContent>
         </Card>
 
-        <Card className="h-fit">
+
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-muted-foreground" />
-              Invite a member
-            </CardTitle>
-            <CardDescription>
-              Email is optional. If empty, a one-time link is generated that you can send manually.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-3" onSubmit={createInvite}>
-              <div className="space-y-1.5">
-                <Label htmlFor="invite-email">Email (optional)</Label>
-                <Input id="invite-email" type="email" placeholder="friend@example.com" value={email} onChange={(event) => setEmail(event.target.value)} />
-              </div>
-              <Button type="submit" className="w-full" disabled={creating}>
-                {creating ? <Loader2 className="animate-spin" /> : <Plus />}
-                Create invite
-              </Button>
-            </form>
-            {newLink && (
-              <div className="mt-4 space-y-2 rounded-lg border bg-muted/40 p-3">
-                <div className="text-xs font-medium">Invite link</div>
-                <div className="break-all text-[11px] text-muted-foreground">{newLink}</div>
-                <Button size="sm" variant="outline" onClick={() => copy(newLink)}>
-                  <Clipboard />
-                  Copy link
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            Invitations
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              Invitations
           </CardTitle>
           <CardDescription>Pending links can be copied and sent manually. Email is delivered by Resend when configured.</CardDescription>
         </CardHeader>
@@ -1014,6 +1003,66 @@ function MembersTab({
           />
         </CardContent>
       </Card>
+
+      <Dialog
+        open={inviteOpen}
+        onOpenChange={(open) => {
+          setInviteOpen(open);
+          if (!open) {
+            setNewLink(null);
+            setEmail("");
+            setError(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              Invite a member
+            </DialogTitle>
+            <DialogDescription>
+              Email is optional. If empty, a one-time link is generated that you can send manually.
+            </DialogDescription>
+          </DialogHeader>
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <form className="space-y-3" onSubmit={createInvite}>
+            <div className="space-y-1.5">
+              <Label htmlFor="invite-email">Email (optional)</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                placeholder="friend@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={creating}>
+              {creating ? <Loader2 className="animate-spin" /> : <Plus />}
+              Create invite
+            </Button>
+          </form>
+          {newLink && (
+            <div className="space-y-2 rounded-lg border bg-muted/40 p-3">
+              <div className="text-xs font-medium">Invite link</div>
+              <div className="break-all text-[11px] text-muted-foreground">{newLink}</div>
+              <Button size="sm" variant="outline" onClick={() => copy(newLink)}>
+                <Clipboard />
+                Copy link
+              </Button>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteOpen(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={!!removeTarget}
@@ -1568,7 +1617,67 @@ function BillingTab({
   );
 }
 
+function metadataRecord(metadata: unknown): Record<string, unknown> {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return {};
+  return metadata as Record<string, unknown>;
+}
+
+function auditSummary(log: AuditLogItem): string {
+  const meta = metadataRecord(log.metadata);
+  const text = (key: string): string => {
+    const value = meta[key];
+    return typeof value === "string" ? value : "";
+  };
+  switch (log.action) {
+    case "invite.created":
+      return text("email") ? `Invited ${text("email")}` : "Created a link invite";
+    case "invite.revoked":
+      return text("email") ? `Revoked invite for ${text("email")}` : "Revoked an invitation";
+    case "member.removed":
+      return text("name") ? `Removed ${text("name")}` : "Removed a member";
+    case "member.left":
+      return "A member left the group";
+    case "mapping.set":
+      return text("memberName")
+        ? `Mapped to ${text("memberName")}`
+        : "Mapped a service account";
+    case "mapping.removed":
+      return "Removed a service-account mapping";
+    case "period.bill_set":
+      return meta.totalIdr !== undefined
+        ? `Set bill to ${formatIdr(Number(meta.totalIdr))}`
+        : "Updated the bill";
+    case "period.finalized":
+      return "Finalized the billing period";
+    case "period.reopened":
+      return "Reopened the billing period";
+    case "console.connected":
+      return text("plan") ? `Connected Console plan ${text("plan")}` : "Connected the Console key";
+    case "console.rotated":
+      return "Rotated the Console read-only key";
+    case "console.disconnected":
+      return "Disconnected the Console key";
+    case "group.created":
+      return text("name") ? `Created group ${text("name")}` : "Created the group";
+    case "group.renamed":
+      return text("name") ? `Renamed group to ${text("name")}` : "Renamed the group";
+    case "group.deleted":
+      return text("name") ? `Deleted group ${text("name")}` : "Deleted the group";
+    case "sync.manual":
+      return meta.rows !== undefined ? `Re-synced ${String(meta.rows)} usage rows` : "Ran a manual sync";
+    default:
+      return Object.keys(meta).length > 0 ? "Has details" : "—";
+  }
+}
+
+function formatMetaValue(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
 function AuditTab({ audit }: { audit: ReturnType<typeof useApi<{ logs: AuditLogItem[] }>> }) {
+  const [detail, setDetail] = useState<AuditLogItem | null>(null);
   const columns: DataTableColumn<AuditLogItem>[] = [
     {
       key: "when",
@@ -1591,37 +1700,112 @@ function AuditTab({ audit }: { audit: ReturnType<typeof useApi<{ logs: AuditLogI
       cell: (log) => log.actorName ?? "System",
     },
     {
-      key: "target",
-      header: "Target",
-      className: "max-w-[280px] truncate text-muted-foreground",
-      sortValue: (log) => log.target ?? "",
-      cell: (log) => log.target ?? "—",
+      key: "details",
+      header: "Details",
+      className: "max-w-[320px] truncate",
+      sortValue: (log) => auditSummary(log),
+      cell: (log) => auditSummary(log),
+    },
+    {
+      key: "actions",
+      header: "",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (log) => (
+        <Button
+          size="icon"
+          variant="ghost"
+          title="View audit detail"
+          aria-label="View audit detail"
+          onClick={() => setDetail(log)}
+        >
+          <Eye />
+        </Button>
+      ),
     },
   ];
 
+  const detailMeta = metadataRecord(detail?.metadata);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ScrollText className="h-4 w-4 text-muted-foreground" />
-          Audit log
-        </CardTitle>
-        <CardDescription>Key, invite, mapping, billing, and role changes for this group.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {audit.loading ? (
-          <Skeleton className="h-48 w-full" />
-        ) : (
-          <DataTable
-            columns={columns}
-            rows={audit.data?.logs ?? []}
-            rowKey={(log) => log.id}
-            showRowNumber
-            initialPageSize={10}
-            empty="No audit entries yet. Connection, invite, mapping, and billing changes will appear here."
-          />
-        )}
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ScrollText className="h-4 w-4 text-muted-foreground" />
+            Audit log
+          </CardTitle>
+          <CardDescription>
+            Key, invite, mapping, billing, and role changes for this group. Use the eye icon for full details.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {audit.loading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : (
+            <DataTable
+              columns={columns}
+              rows={audit.data?.logs ?? []}
+              rowKey={(log) => log.id}
+              showRowNumber
+              initialPageSize={10}
+              empty="No audit entries yet. Connection, invite, mapping, and billing changes will appear here."
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={!!detail}
+        onOpenChange={(open) => {
+          if (!open) setDetail(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{detail?.action ?? "Audit detail"}</DialogTitle>
+            <DialogDescription>
+              {detail ? `${formatDateTime(detail.createdAt)} · ${detail.actorName ?? "System"}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {detail && (
+            <div className="space-y-3 text-sm">
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Summary</div>
+                <div>{auditSummary(detail)}</div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Target</div>
+                <div className="break-all font-mono text-xs">{detail.target ?? "—"}</div>
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Metadata
+                </div>
+                {Object.keys(detailMeta).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No extra details recorded.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {Object.entries(detailMeta).map(([key, value]) => (
+                      <div key={key} className="flex items-start justify-between gap-3">
+                        <span className="text-muted-foreground">{key}</span>
+                        <span className="max-w-[65%] break-all text-right font-mono text-xs">
+                          {formatMetaValue(value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetail(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

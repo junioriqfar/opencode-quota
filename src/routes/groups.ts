@@ -184,11 +184,18 @@ groups.delete("/:groupId/members/:userId", async (c) => {
     returning user_id
   `;
   if (updated.length === 0) throw notFound("Member not found.");
+  const removedUser = await sql<{ name: string; email: string }[]>`
+    select name, email from users where id = ${userId} limit 1
+  `;
   await audit({
     groupId,
     actorUserId: auth.user.id,
     action: "member.removed",
     target: userId,
+    metadata: {
+      name: removedUser[0]?.name ?? null,
+      email: removedUser[0]?.email ?? null,
+    },
   });
   return c.json({ ok: true });
 });
@@ -262,7 +269,7 @@ groups.post("/:groupId/invites", async (c) => {
     actorUserId: auth.user.id,
     action: "invite.created",
     target: inviteId,
-    metadata: { email },
+    metadata: { email, role: "member" },
   });
   return c.json(
     {
@@ -288,8 +295,8 @@ groups.delete("/:groupId/invites/:inviteId", async (c) => {
   const auth = await requireGroupOwner(c, groupId);
   assertCsrf(c, auth);
   const inviteId = c.req.param("inviteId");
-  const deleted = await sql`
-    delete from invites where id = ${inviteId} and group_id = ${groupId} returning id
+  const deleted = await sql<{ id: string; email: string | null }[]>`
+    delete from invites where id = ${inviteId} and group_id = ${groupId} returning id, email
   `;
   if (deleted.length === 0) throw notFound("Invite not found.");
   await audit({
@@ -297,6 +304,7 @@ groups.delete("/:groupId/invites/:inviteId", async (c) => {
     actorUserId: auth.user.id,
     action: "invite.revoked",
     target: inviteId,
+    metadata: { email: deleted[0]?.email ?? null },
   });
   return c.json({ ok: true });
 });
@@ -416,9 +424,12 @@ groups.put("/:groupId/mappings/:accountId", async (c) => {
   `;
   if (!account[0]) throw notFound("Service account not found.");
   if (account[0].is_reader) throw badRequest("The reader account cannot be mapped.");
-  const member = await sql<{ user_id: string }[]>`
-    select user_id from group_members
-    where group_id = ${groupId} and user_id = ${body.userId} and status = 'active' limit 1
+  const member = await sql<{ user_id: string; name: string }[]>`
+    select gm.user_id, u.name
+    from group_members gm
+    join users u on u.id = gm.user_id
+    where gm.group_id = ${groupId} and gm.user_id = ${body.userId} and gm.status = 'active'
+    limit 1
   `;
   if (!member[0]) throw badRequest("Choose an active member of this group.");
   await sql`
@@ -432,7 +443,7 @@ groups.put("/:groupId/mappings/:accountId", async (c) => {
     actorUserId: auth.user.id,
     action: "mapping.set",
     target: accountId,
-    metadata: { userId: body.userId },
+    metadata: { userId: body.userId, memberName: member[0].name },
   });
   return c.json({ ok: true });
 });
