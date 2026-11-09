@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { AppSettings, SuperadminGroup } from "@shared/types";
 import { AppShell } from "@/components/app-shell";
+import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +35,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useApi } from "@/hooks/use-api";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import { post, put } from "@/lib/api";
@@ -112,6 +112,90 @@ export function SuperadminPage() {
     }
   };
 
+  const tenantColumns: DataTableColumn<SuperadminGroup>[] = [
+    {
+      key: "group",
+      header: "Group",
+      sortValue: (group) => group.name,
+      cell: (group) => (
+        <div>
+          <div className="font-medium">{group.name}</div>
+          <div className="text-[11px] text-muted-foreground">{group.memberCount} members</div>
+        </div>
+      ),
+    },
+    {
+      key: "owner",
+      header: "Owner",
+      headerClassName: "hidden lg:table-cell",
+      className: "hidden lg:table-cell",
+      sortValue: (group) => group.ownerName,
+      cell: (group) => (
+        <div>
+          <div>{group.ownerName}</div>
+          <div className="text-[11px] text-muted-foreground">{group.ownerEmail}</div>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortValue: (group) => group.status,
+      cell: (group) => (
+        <Badge variant={group.status === "active" ? "success" : "secondary"} className="font-normal">
+          {group.status === "active" ? <CheckCircle2 className="h-3 w-3" /> : <PauseCircle className="h-3 w-3" />}
+          {group.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "console",
+      header: "Console",
+      headerClassName: "hidden lg:table-cell",
+      className: "hidden lg:table-cell",
+      sortValue: (group) => group.consoleStatus ?? "",
+      cell: (group) => (
+        <div className="flex flex-col gap-1">
+          <Badge variant={group.consoleStatus === "valid" ? "success" : group.consoleStatus === "needs_reauth" ? "destructive" : "warning"} className="w-fit font-normal">
+            {group.consoleStatus === "valid" ? (
+              <PlugZap className="h-3 w-3" />
+            ) : group.consoleStatus === "needs_reauth" ? (
+              <AlertTriangle className="h-3 w-3" />
+            ) : (
+              <Plug className="h-3 w-3" />
+            )}
+            {group.consoleStatus ?? "not connected"}
+          </Badge>
+          {group.lastError && <span className="max-w-[220px] truncate text-[11px] text-destructive">{group.lastError}</span>}
+        </div>
+      ),
+    },
+    {
+      key: "sync",
+      header: "Last sync",
+      className: "text-muted-foreground",
+      sortValue: (group) => group.lastSyncAt ?? "",
+      cell: (group) => relativeTime(group.lastSyncAt),
+    },
+    {
+      key: "actions",
+      header: "",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (group) => (
+        <div className="flex justify-end gap-1">
+          <Button size="icon" variant="ghost" title="Sync now" aria-label="Sync now" onClick={() => syncGroup(group)}>
+            <RefreshCw />
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => toggleGroup(group)}>
+            {group.status === "active" ? <PauseCircle /> : <PlayCircle />}
+            {group.status === "active" ? "Disable" : "Enable"}
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <AppShell>
       <PageHeader
@@ -171,65 +255,14 @@ export function SuperadminPage() {
             {groups.loading ? (
               <Skeleton className="h-48 w-full" />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Group</TableHead>
-                    <TableHead className="hidden lg:table-cell">Owner</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden lg:table-cell">Console</TableHead>
-                    <TableHead>Last sync</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(groups.data?.groups ?? []).map((group) => (
-                    <TableRow key={group.id}>
-                      <TableCell>
-                        <div className="font-medium">{group.name}</div>
-                        <div className="text-[11px] text-muted-foreground">{group.memberCount} members</div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div>{group.ownerName}</div>
-                        <div className="text-[11px] text-muted-foreground">{group.ownerEmail}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={group.status === "active" ? "success" : "secondary"} className="font-normal">
-                          {group.status === "active" ? <CheckCircle2 className="h-3 w-3" /> : <PauseCircle className="h-3 w-3" />}
-                          {group.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="flex flex-col gap-1">
-                          <Badge variant={group.consoleStatus === "valid" ? "success" : group.consoleStatus === "needs_reauth" ? "destructive" : "warning"} className="w-fit font-normal">
-                            {group.consoleStatus === "valid" ? (
-                              <PlugZap className="h-3 w-3" />
-                            ) : group.consoleStatus === "needs_reauth" ? (
-                              <AlertTriangle className="h-3 w-3" />
-                            ) : (
-                              <Plug className="h-3 w-3" />
-                            )}
-                            {group.consoleStatus ?? "not connected"}
-                          </Badge>
-                          {group.lastError && <span className="max-w-[220px] truncate text-[11px] text-destructive">{group.lastError}</span>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{relativeTime(group.lastSyncAt)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="icon" variant="ghost" title="Sync now" onClick={() => syncGroup(group)}>
-                            <RefreshCw />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => toggleGroup(group)}>
-                            {group.status === "active" ? <PauseCircle /> : <PlayCircle />}
-                            {group.status === "active" ? "Disable" : "Enable"}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={tenantColumns}
+                rows={groups.data?.groups ?? []}
+                rowKey={(group) => group.id}
+                showRowNumber
+                initialPageSize={10}
+                empty="No tenants yet."
+              />
             )}
           </CardContent>
         </Card>

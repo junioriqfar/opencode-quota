@@ -1,8 +1,19 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Activity, LogOut, Moon, Shield, Sun, Users } from "lucide-react";
 import type { GroupListItem } from "@shared/types";
-import { APP_NAME } from "@shared/brand";import { Button } from "@/components/ui/button";
+import { APP_NAME } from "@shared/brand";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -27,6 +38,7 @@ export function AppShell({
   const navigate = useNavigate();
   const location = useLocation();
   const groups = useApi<{ groups: GroupListItem[] }>("/api/groups");
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   useEffect(() => {
     const handler = () => groups.refresh();
@@ -35,13 +47,14 @@ export function AppShell({
   }, [groups.refresh]);
 
   const handleLogout = async () => {
+    setLogoutOpen(false);
     await logout();
     notifySuccess("Signed out.");
     navigate("/login");
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-x-clip">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:ring-2 focus:ring-ring"
@@ -103,7 +116,7 @@ export function AppShell({
               <Button variant="ghost" size="icon" onClick={toggle} title="Toggle theme" aria-label="Toggle theme">
                 {theme === "dark" ? <Sun /> : <Moon />}
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleLogout} title="Sign out" aria-label="Sign out">
+              <Button variant="ghost" size="icon" onClick={() => setLogoutOpen(true)} title="Sign out" aria-label="Sign out">
                 <LogOut />
               </Button>
             </div>
@@ -117,6 +130,28 @@ export function AppShell({
           </div>
         </footer>
       </div>
+
+      <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will need to sign in again to access your groups.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleLogout();
+              }}
+            >
+              Sign out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

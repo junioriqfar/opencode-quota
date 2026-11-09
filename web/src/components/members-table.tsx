@@ -12,12 +12,13 @@ import {
   UserRound,
 } from "lucide-react";
 import type { GroupMemberSummary, GroupSummary } from "@shared/types";
+import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { MemberModelUsageDialog } from "@/components/member-model-usage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { formatDateTime, formatIdr, formatNumber, formatPct, formatUsd } from "@/lib/format";
 
 function Avatar({ name }: { name: string }) {
@@ -144,6 +145,70 @@ export function MembersTable({
   const toggle = (userId: string) =>
     setExpandedUserId((current) => (current === userId ? null : userId));
 
+  const columns: DataTableColumn<GroupMemberSummary>[] = [
+    {
+      key: "member",
+      header: "Member",
+      headerClassName: "min-w-[220px]",
+      sortValue: (member) => member.name,
+      cell: (member) => <MemberName member={member} />,
+    },
+    {
+      key: "role",
+      header: "Role",
+      sortValue: (member) => member.role,
+      cell: (member) => <RoleBadge member={member} />,
+    },
+    {
+      key: "cost",
+      header: "List cost",
+      headerClassName: "text-right",
+      className: "text-right font-medium tabular-nums",
+      sortValue: (member) => member.listCostUsd,
+      cell: (member) => formatUsd(member.listCostUsd, true),
+    },
+    {
+      key: "share",
+      header: "Share",
+      headerClassName: "min-w-[140px]",
+      sortValue: (member) => member.sharePct,
+      cell: (member) => <ShareCell member={member} />,
+    },
+    {
+      key: "quota",
+      header: "Quota est.",
+      headerClassName: "text-right",
+      className: "text-right tabular-nums",
+      sortValue: (member) => member.quotaPct,
+      cell: (member) => formatPct(member.quotaPct),
+    },
+    {
+      key: "models",
+      header: "Models",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (member) => (
+        <Button variant="outline" size="sm" onClick={() => toggle(member.userId)}>
+          <Boxes />
+          Models
+        </Button>
+      ),
+    },
+    {
+      key: "bill",
+      header: "Bill",
+      headerClassName: "text-right",
+      className: "text-right",
+      sortValue: (member) => member.amountIdr ?? 0,
+      cell: (member) => (
+        <div>
+          <div className="font-semibold tabular-nums">{formatIdr(member.amountIdr)}</div>
+          <div className="text-[11px] text-muted-foreground tabular-nums">{formatUsd(member.amountUsd)}</div>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <Card>
       <CardHeader className="flex-row items-start justify-between space-y-0">
@@ -169,52 +234,13 @@ export function MembersTable({
         ) : (
           <>
             <div className="hidden md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[220px]">Member</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">List cost</TableHead>
-                    <TableHead className="min-w-[140px]">Share</TableHead>
-                    <TableHead className="text-right">Quota est.</TableHead>
-                    <TableHead className="text-right">Models</TableHead>
-                    <TableHead className="text-right">Bill</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {summary.members.map((member) => (
-                    <TableRow key={member.userId}>
-                      <TableCell>
-                        <MemberName member={member} />
-                      </TableCell>
-                      <TableCell>
-                        <RoleBadge member={member} />
-                      </TableCell>
-                      <TableCell className="text-right font-medium tabular-nums">
-                        {formatUsd(member.listCostUsd, true)}
-                      </TableCell>
-                      <TableCell>
-                        <ShareCell member={member} />
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{formatPct(member.quotaPct)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggle(member.userId)}
-                        >
-                          <Boxes />
-                          Models
-                        </Button>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="font-semibold tabular-nums">{formatIdr(member.amountIdr)}</div>
-                        <div className="text-[11px] text-muted-foreground tabular-nums">{formatUsd(member.amountUsd)}</div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                <TableFooter>
+              <DataTable
+                columns={columns}
+                rows={summary.members}
+                rowKey={(member) => member.userId}
+                initialPageSize={10}
+                empty="No members with usage yet."
+                footerRow={
                   <TableRow>
                     <TableCell className="font-semibold">Total</TableCell>
                     <TableCell />
@@ -230,8 +256,8 @@ export function MembersTable({
                       {formatIdr(summary.bill.totalIdr)}
                     </TableCell>
                   </TableRow>
-                </TableFooter>
-              </Table>
+                }
+              />
             </div>
 
             <div className="space-y-3 md:hidden">

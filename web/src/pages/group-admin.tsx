@@ -44,6 +44,7 @@ import type {
   ServiceAccountItem,
 } from "@shared/types";
 import { AppShell } from "@/components/app-shell";
+import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { MemberModelUsageDialog } from "@/components/member-model-usage";
 import { PageHeader } from "@/components/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -71,7 +72,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApi } from "@/hooks/use-api";
 import { usePageMeta } from "@/hooks/use-page-meta";
@@ -695,6 +695,152 @@ function MembersTab({
   const expandedMember =
     (members.data?.members ?? []).find((member) => member.userId === expandedUserId) ?? null;
 
+  const memberColumns: DataTableColumn<MemberListItem>[] = [
+    {
+      key: "name",
+      header: "Name",
+      sortValue: (member) => member.name,
+      cell: (member) => <span className="font-medium">{member.name}</span>,
+    },
+    {
+      key: "email",
+      header: "Email",
+      className: "text-muted-foreground",
+      sortValue: (member) => member.email ?? "",
+      cell: (member) => member.email ?? "—",
+    },
+    {
+      key: "role",
+      header: "Role",
+      cell: (member) => (
+        <div className="flex items-center gap-1.5">
+          <Badge variant={member.role === "owner" ? "default" : "outline"} className="font-normal">
+            {member.role === "owner" ? <Crown className="h-3 w-3" /> : <UserRound className="h-3 w-3" />}
+            {member.role === "owner" ? "Owner" : "Member"}
+          </Badge>
+          {member.status === "removed" && (
+            <Badge variant="secondary">
+              <UserMinus className="h-3 w-3" />
+              Removed
+            </Badge>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "mapped",
+      header: "Mapped",
+      headerClassName: "text-right",
+      className: "text-right tabular-nums",
+      sortValue: (member) => member.mappedAccounts,
+      cell: (member) => member.mappedAccounts,
+    },
+    {
+      key: "cost",
+      header: "List cost",
+      headerClassName: "text-right",
+      className: "text-right tabular-nums",
+      sortValue: (member) => member.listCostUsd,
+      cell: (member) => formatUsd(member.listCostUsd, true),
+    },
+    {
+      key: "actions",
+      header: "",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (member) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Show model usage"
+            aria-label={`Model usage for ${member.name}`}
+            onClick={() => setExpandedUserId(member.userId)}
+          >
+            <Boxes />
+          </Button>
+          {member.role !== "owner" && member.status === "active" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              title="Remove member"
+              aria-label={`Remove ${member.name}`}
+              onClick={() => removeMember(member.userId, member.name)}
+            >
+              <UserMinus />
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  const inviteColumns: DataTableColumn<InviteItem>[] = [
+    {
+      key: "email",
+      header: "Email",
+      sortValue: (invite) => invite.email ?? "",
+      cell: (invite) => invite.email ?? "Link invite",
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortValue: (invite) => invite.status,
+      cell: (invite) => (
+        <Badge variant={invite.status === "pending" ? "info" : invite.status === "accepted" ? "success" : "secondary"} className="font-normal">
+          {invite.status === "pending" ? (
+            <Clock3 className="h-3 w-3" />
+          ) : invite.status === "accepted" ? (
+            <CheckCircle2 className="h-3 w-3" />
+          ) : (
+            <XCircle className="h-3 w-3" />
+          )}
+          {invite.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "expires",
+      header: "Expires",
+      className: "text-muted-foreground",
+      sortValue: (invite) => invite.expiresAt,
+      cell: (invite) => formatDateTime(invite.expiresAt),
+    },
+    {
+      key: "link",
+      header: "Link",
+      cell: (invite) =>
+        invite.link ? (
+          <Button size="sm" variant="ghost" onClick={() => copy(invite.link!)}>
+            <Link2 />
+            Copy
+          </Button>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        ),
+    },
+    {
+      key: "actions",
+      header: "",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (invite) =>
+        invite.status === "pending" ? (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => revokeInvite(invite.id)}
+            title="Revoke invite"
+            aria-label="Revoke invite"
+          >
+            <Trash2 />
+          </Button>
+        ) : null,
+    },
+  ];
+
   const createInvite = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -765,73 +911,14 @@ function MembersTab({
               <Skeleton className="h-40 w-full" />
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead className="text-right">Mapped</TableHead>
-                      <TableHead className="text-right">List cost</TableHead>
-                      <TableHead />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(members.data?.members ?? []).map((member) => (
-                      <TableRow key={member.userId}>
-                        <TableCell className="font-medium">{member.name}</TableCell>
-                        <TableCell className="text-muted-foreground">{member.email ?? "—"}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <Badge variant={member.role === "owner" ? "default" : "outline"} className="font-normal">
-                              {member.role === "owner" ? <Crown className="h-3 w-3" /> : <UserRound className="h-3 w-3" />}
-                              {member.role === "owner" ? "Owner" : "Member"}
-                            </Badge>
-                            {member.status === "removed" && (
-                              <Badge variant="secondary">
-                                <UserMinus className="h-3 w-3" />
-                                Removed
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">{member.mappedAccounts}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatUsd(member.listCostUsd, true)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title={
-                                expandedUserId === member.userId
-                                  ? "Hide model usage"
-                                  : "Show model usage"
-                              }
-                              onClick={() =>
-                                setExpandedUserId((current) =>
-                                  current === member.userId ? null : member.userId,
-                                )
-                              }
-                            >
-                              <Boxes />
-                            </Button>
-                            {member.role !== "owner" && member.status === "active" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                title="Remove member"
-                                onClick={() => removeMember(member.userId, member.name)}
-                              >
-                                <UserMinus />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <DataTable
+                  columns={memberColumns}
+                  rows={members.data?.members ?? []}
+                  rowKey={(member) => member.userId}
+                  showRowNumber
+                  initialPageSize={10}
+                  empty="No members yet. Invite someone to get started."
+                />
 
                 {expandedMember && (
                   <MemberModelUsageDialog
@@ -894,64 +981,14 @@ function MembersTab({
           <CardDescription>Pending links can be copied and sent manually. Email is delivered by Resend when configured.</CardDescription>
         </CardHeader>
         <CardContent>
-          {(invites.data?.invites ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No invitations yet.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead>Link</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(invites.data?.invites ?? []).map((invite) => (
-                  <TableRow key={invite.id}>
-                    <TableCell>{invite.email ?? "Link invite"}</TableCell>
-                    <TableCell>
-                      <Badge variant={invite.status === "pending" ? "info" : invite.status === "accepted" ? "success" : "secondary"} className="font-normal">
-                        {invite.status === "pending" ? (
-                          <Clock3 className="h-3 w-3" />
-                        ) : invite.status === "accepted" ? (
-                          <CheckCircle2 className="h-3 w-3" />
-                        ) : (
-                          <XCircle className="h-3 w-3" />
-                        )}
-                        {invite.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{formatDateTime(invite.expiresAt)}</TableCell>
-                    <TableCell>
-                      {invite.link ? (
-                        <Button size="sm" variant="ghost" onClick={() => copy(invite.link!)}>
-                          <Link2 />
-                          Copy
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {invite.status === "pending" && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => revokeInvite(invite.id)}
-                          title="Revoke invite"
-                        >
-                          <Trash2 />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <DataTable
+            columns={inviteColumns}
+            rows={invites.data?.invites ?? []}
+            rowKey={(invite) => invite.id}
+            showRowNumber
+            initialPageSize={10}
+            empty="No invitations yet."
+          />
         </CardContent>
       </Card>
     </div>
@@ -983,6 +1020,110 @@ function MappingTab({
   }, [accounts.data]);
 
   const activeMembers = (members.data?.members ?? []).filter((member) => member.status === "active");
+
+  const mappingColumns: DataTableColumn<ServiceAccountItem>[] = [
+    {
+      key: "account",
+      header: "Account",
+      sortValue: (account) => account.name,
+      cell: (account) => (
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{account.name}</span>
+            {account.isReader && (
+              <Badge variant="secondary">
+                <Eye className="h-3 w-3" />
+                Reader
+              </Badge>
+            )}
+            {!account.isReader && !account.isMapped && account.listCostUsd > 0 && (
+              <Badge variant="warning">
+                <AlertTriangle className="h-3 w-3" />
+                Unmapped
+              </Badge>
+            )}
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            Last active {formatDateTime(account.lastActiveAt)}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "keys",
+      header: "Keys",
+      className: "text-xs text-muted-foreground",
+      sortValue: (account) => account.keyNames.join(", "),
+      cell: (account) => account.keyNames.join(", ") || "—",
+    },
+    {
+      key: "cost",
+      header: "List cost",
+      headerClassName: "text-right",
+      className: "text-right tabular-nums",
+      sortValue: (account) => account.listCostUsd,
+      cell: (account) => formatUsd(account.listCostUsd, true),
+    },
+    {
+      key: "member",
+      header: "Member",
+      sortValue: (account) => account.mappedUserName ?? "",
+      cell: (account) =>
+        account.isReader ? (
+          <span className="text-xs text-muted-foreground">Excluded from billing</span>
+        ) : (
+          <Select
+            value={selection[account.accountId] || undefined}
+            onValueChange={(value) =>
+              setSelection((current) => ({ ...current, [account.accountId]: value }))
+            }
+          >
+            <SelectTrigger className="min-w-[180px]">
+              <SelectValue placeholder="Select member…" />
+            </SelectTrigger>
+            <SelectContent>
+              {activeMembers.map((member) => (
+                <SelectItem key={member.userId} value={member.userId}>
+                  {member.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ),
+    },
+    {
+      key: "actions",
+      header: "",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (account) =>
+        !account.isReader ? (
+          <div className="flex justify-end gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => save(account.accountId)}
+              disabled={savingId === account.accountId}
+            >
+              {savingId === account.accountId ? <Loader2 className="animate-spin" /> : <Check />}
+              Save
+            </Button>
+            {account.isMapped && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => unmap(account.accountId)}
+                title="Remove mapping"
+                aria-label="Remove mapping"
+              >
+                <Trash2 />
+              </Button>
+            )}
+          </div>
+        ) : null,
+    },
+  ];
 
   const save = async (accountId: string) => {
     const userId = selection[accountId];
@@ -1047,97 +1188,15 @@ function MappingTab({
         )}
         {accounts.loading ? (
           <Skeleton className="h-48 w-full" />
-        ) : (accounts.data?.accounts ?? []).length === 0 ? (
-          <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            No service accounts yet. Connect the Console key and run a sync first.
-          </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Account</TableHead>
-                <TableHead>Keys</TableHead>
-                <TableHead className="text-right">List cost</TableHead>
-                <TableHead>Member</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(accounts.data?.accounts ?? []).map((account) => (
-                <TableRow key={account.accountId}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{account.name}</span>
-                      {account.isReader && (
-                        <Badge variant="secondary">
-                          <Eye className="h-3 w-3" />
-                          Reader
-                        </Badge>
-                      )}
-                      {!account.isReader && !account.isMapped && account.listCostUsd > 0 && (
-                        <Badge variant="warning">
-                          <AlertTriangle className="h-3 w-3" />
-                          Unmapped
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">Last active {formatDateTime(account.lastActiveAt)}</div>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{account.keyNames.join(", ") || "—"}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatUsd(account.listCostUsd, true)}</TableCell>
-                  <TableCell>
-                    {account.isReader ? (
-                      <span className="text-xs text-muted-foreground">Excluded from billing</span>
-                    ) : (
-                      <Select
-                        value={selection[account.accountId] || undefined}
-                        onValueChange={(value) =>
-                          setSelection((current) => ({ ...current, [account.accountId]: value }))
-                        }
-                      >
-                        <SelectTrigger className="min-w-[180px]">
-                          <SelectValue placeholder="Select member…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {activeMembers.map((member) => (
-                            <SelectItem key={member.userId} value={member.userId}>
-                              {member.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {!account.isReader && (
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => save(account.accountId)}
-                          disabled={savingId === account.accountId}
-                        >
-                          {savingId === account.accountId ? <Loader2 className="animate-spin" /> : <Check />}
-                          Save
-                        </Button>
-                        {account.isMapped && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => unmap(account.accountId)}
-                            title="Remove mapping"
-                          >
-                            <Trash2 />
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={mappingColumns}
+            rows={accounts.data?.accounts ?? []}
+            rowKey={(account) => account.accountId}
+            showRowNumber
+            initialPageSize={10}
+            empty="No service accounts yet. Connect the Console key and run a sync first."
+          />
         )}
       </CardContent>
     </Card>
@@ -1163,6 +1222,7 @@ function BillingTab({
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [reopening, setReopening] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -1233,13 +1293,6 @@ function BillingTab({
 
   const reopen = async () => {
     if (!period) return;
-    if (
-      !window.confirm(
-        "Reopen this period? Amounts will become editable and members will see a draft again. Usage will be re-synced for the last 90 days.",
-      )
-    ) {
-      return;
-    }
     setError(null);
     setMessage(null);
     setReopening(true);
@@ -1269,6 +1322,45 @@ function BillingTab({
       setReopening(false);
     }
   };
+
+  const splitColumns: DataTableColumn<GroupSummary["members"][number]>[] = [
+    {
+      key: "member",
+      header: "Member",
+      sortValue: (member) => member.name,
+      cell: (member) => (
+        <div>
+          <div className="font-medium">{member.name}</div>
+          <div className="text-[11px] text-muted-foreground">
+            {formatUsd(member.listCostUsd, true)} list cost
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "share",
+      header: "Share",
+      headerClassName: "text-right",
+      className: "text-right tabular-nums",
+      sortValue: (member) => member.sharePct,
+      cell: (member) => formatPct(member.sharePct),
+    },
+    {
+      key: "bill",
+      header: "Bill",
+      headerClassName: "text-right",
+      className: "text-right",
+      sortValue: (member) => member.amountIdr ?? 0,
+      cell: (member) => (
+        <div>
+          <div className="font-medium tabular-nums">{formatIdr(member.amountIdr)}</div>
+          <div className="text-[11px] text-muted-foreground tabular-nums">
+            {formatUsd(member.amountUsd)}
+          </div>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -1326,7 +1418,7 @@ function BillingTab({
               Save bill
             </Button>
             {period?.status === "finalized" ? (
-              <Button variant="outline" onClick={reopen} disabled={reopening}>
+              <Button variant="outline" onClick={() => setReopenOpen(true)} disabled={reopening}>
                 {reopening ? <Loader2 className="animate-spin" /> : <Lock />}
                 {reopening ? "Reopening…" : "Reopen period"}
               </Button>
@@ -1374,30 +1466,13 @@ function BillingTab({
               <AlertDescription>{summary.error.message}</AlertDescription>
             </Alert>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead className="text-right">Share</TableHead>
-                  <TableHead className="text-right">Bill</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(summary.data?.members ?? []).map((member) => (
-                  <TableRow key={member.userId}>
-                    <TableCell>
-                      <div className="font-medium">{member.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{formatUsd(member.listCostUsd, true)} list cost</div>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{formatPct(member.sharePct)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="font-medium tabular-nums">{formatIdr(member.amountIdr)}</div>
-                      <div className="text-[11px] text-muted-foreground tabular-nums">{formatUsd(member.amountUsd)}</div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={splitColumns}
+              rows={summary.data?.members ?? []}
+              rowKey={(member) => member.userId}
+              initialPageSize={10}
+              empty="No members with usage in this period."
+            />
           )}
           {summary.data?.unmapped.length ? (
             <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
@@ -1406,11 +1481,70 @@ function BillingTab({
           ) : null}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={reopenOpen}
+        onOpenChange={(open) => {
+          if (!reopening) setReopenOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reopen this period?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Amounts will become editable and members will see a draft again. Usage will be
+              re-synced for the last 90 days.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reopening}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void reopen();
+              }}
+            >
+              {reopening ? <Loader2 className="animate-spin" /> : <Lock />}
+              Reopen period
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
 function AuditTab({ audit }: { audit: ReturnType<typeof useApi<{ logs: AuditLogItem[] }>> }) {
+  const columns: DataTableColumn<AuditLogItem>[] = [
+    {
+      key: "when",
+      header: "When",
+      className: "text-muted-foreground",
+      sortValue: (log) => log.createdAt,
+      cell: (log) => formatDateTime(log.createdAt),
+    },
+    {
+      key: "action",
+      header: "Action",
+      className: "font-medium",
+      sortValue: (log) => log.action,
+      cell: (log) => log.action,
+    },
+    {
+      key: "actor",
+      header: "Actor",
+      sortValue: (log) => log.actorName ?? "",
+      cell: (log) => log.actorName ?? "System",
+    },
+    {
+      key: "target",
+      header: "Target",
+      className: "max-w-[280px] truncate text-muted-foreground",
+      sortValue: (log) => log.target ?? "",
+      cell: (log) => log.target ?? "—",
+    },
+  ];
+
   return (
     <Card>
       <CardHeader>
@@ -1423,31 +1557,15 @@ function AuditTab({ audit }: { audit: ReturnType<typeof useApi<{ logs: AuditLogI
       <CardContent>
         {audit.loading ? (
           <Skeleton className="h-48 w-full" />
-        ) : (audit.data?.logs ?? []).length === 0 ? (
-          <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            No audit entries yet. Connection, invite, mapping, and billing changes will appear here.
-          </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>When</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Actor</TableHead>
-                <TableHead>Target</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(audit.data?.logs ?? []).map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="text-muted-foreground">{formatDateTime(log.createdAt)}</TableCell>
-                  <TableCell className="font-medium">{log.action}</TableCell>
-                  <TableCell>{log.actorName ?? "System"}</TableCell>
-                  <TableCell className="max-w-[280px] truncate text-muted-foreground">{log.target ?? "—"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={columns}
+            rows={audit.data?.logs ?? []}
+            rowKey={(log) => log.id}
+            showRowNumber
+            initialPageSize={10}
+            empty="No audit entries yet. Connection, invite, mapping, and billing changes will appear here."
+          />
         )}
       </CardContent>
     </Card>
