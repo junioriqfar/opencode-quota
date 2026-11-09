@@ -310,6 +310,7 @@ function ConnectionTab({
   const [key, setKey] = useState("");
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [disconnectOpen, setDisconnectOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -350,7 +351,6 @@ function ConnectionTab({
   };
 
   const disconnect = async () => {
-    if (!window.confirm("Disconnect the Console key? Sync will stop until a new key is connected.")) return;
     setError(null);
     setMessage(null);
     try {
@@ -415,7 +415,7 @@ function ConnectionTab({
               Sync now
             </Button>
             {connection.connected && (
-              <Button onClick={disconnect} variant="destructive" size="sm">
+              <Button onClick={() => setDisconnectOpen(true)} variant="destructive" size="sm">
                 <Unplug />
                 Disconnect
               </Button>
@@ -458,6 +458,29 @@ function ConnectionTab({
           </form>
         </CardContent>
       </Card>
+
+      <AlertDialog open={disconnectOpen} onOpenChange={setDisconnectOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect the Console key?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sync will stop until a new read-only key is connected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void disconnect();
+              }}
+            >
+              <Unplug />
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -692,6 +715,7 @@ function MembersTab({
   const [error, setError] = useState<string | null>(null);
   const [newLink, setNewLink] = useState<string | null>(null);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<{ userId: string; name: string } | null>(null);
   const expandedMember =
     (members.data?.members ?? []).find((member) => member.userId === expandedUserId) ?? null;
 
@@ -766,7 +790,7 @@ function MembersTab({
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               title="Remove member"
               aria-label={`Remove ${member.name}`}
-              onClick={() => removeMember(member.userId, member.name)}
+              onClick={() => setRemoveTarget({ userId: member.userId, name: member.name })}
             >
               <UserMinus />
             </Button>
@@ -864,14 +888,13 @@ function MembersTab({
   };
 
   const removeMember = async (userId: string, name: string) => {
-    if (!window.confirm(`Remove ${name} from this group? Historical periods keep their mapping.`)) return;
     setError(null);
     try {
       await del(`/api/groups/${groupId}/members/${userId}`);
       members.refresh();
       invites.refresh();
       onChanged();
-      notifySuccess("Member removed.");
+      notifySuccess(`Removed ${name}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not remove the member.");
       notifyError(err, "Could not remove the member.");
@@ -991,6 +1014,37 @@ function MembersTab({
           />
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={!!removeTarget}
+        onOpenChange={(open) => {
+          if (!open) setRemoveTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {removeTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will lose access to this group. Historical periods keep their mapping.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                if (removeTarget) {
+                  void removeMember(removeTarget.userId, removeTarget.name);
+                  setRemoveTarget(null);
+                }
+              }}
+            >
+              <UserMinus />
+              Remove member
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
