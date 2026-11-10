@@ -1,6 +1,5 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -21,7 +20,7 @@ function initialTheme(): Theme {
 
 interface ThemeContextValue {
   theme: Theme;
-  toggle: () => void;
+  setTheme: (theme: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -39,11 +38,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       ?.setAttribute("content", theme === "dark" ? "#09090b" : "#ffffff");
   }, [theme]);
 
-  const toggle = useCallback(() => {
-    setTheme((current) => (current === "dark" ? "light" : "dark"));
-  }, []);
-
-  const value = useMemo(() => ({ theme, toggle }), [theme, toggle]);
+  const value = useMemo(() => ({ theme, setTheme }), [theme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

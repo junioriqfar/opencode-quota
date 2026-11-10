@@ -10,6 +10,7 @@ import {
   createSession,
   destroySession,
   findUserByEmail,
+  getAuth,
   hashPassword,
   isSetupAvailable,
   normalizeEmail,
@@ -23,7 +24,7 @@ import {
 import { timingSafeEqualText } from "../crypto.ts";
 import { clearSetupToken, getSetupToken, logGeneratedSetupToken } from "../setup-token.ts";
 import { audit, newId, sql } from "../db.ts";
-import { sendPasswordResetEmail, sendVerificationEmail } from "../email.ts";
+import { sendPasswordChangedEmail, sendPasswordResetEmail, sendVerificationEmail } from "../email.ts";
 import { badRequest, conflict, forbidden, unauthorized } from "../errors.ts";
 import { clientIp, parseJson, rateLimit } from "../http.ts";
 import { verifyTurnstile } from "../turnstile.ts";
@@ -35,6 +36,21 @@ const auth = new Hono<AppEnv>();
 const emailSchema = z.string().trim().email().max(320);
 const passwordSchema = z.string().min(8).max(128);
 const nameSchema = z.string().trim().min(2).max(80);
+
+/** Check the new-password complexity rules and describe what is missing. */
+function missingPasswordRequirements(password: string): string[] {
+  const missing: string[] = [];
+  if (!/[A-Z]/.test(password)) missing.push("an uppercase letter");
+  if (!/[a-z]/.test(password)) missing.push("a lowercase letter");
+  if (!/[0-9]/.test(password)) missing.push("a number");
+  if (!/[^A-Za-z0-9]/.test(password)) missing.push("a symbol");
+  return missing;
+}
+
+function joinList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
 
 function publicUser(user: AuthContext["user"], csrfToken: string) {
   return {
@@ -73,10 +89,15 @@ auth.post("/signup", async (c) => {
       email: emailSchema,
       password: passwordSchema,
       turnstileToken: z.string().optional(),
+      next: z.string().max(2048).optional(),
     }),
   );
   const settings = await getAppSettings();
   if (!settings.signupOpen) throw forbidden("Signups are currently closed.");
+  const missing = missingPasswordRequirements(body.password);
+  if (missing.length > 0) {
+    throw badRequest(`Password must include ${joinList(missing)}.`);
+  }
   const ip = clientIp(c);
   if (!(await verifyTurnstile(body.turnstileToken, ip))) {
     throw badRequest("Turnstile verification failed. Please try again.");
@@ -91,7 +112,7 @@ auth.post("/signup", async (c) => {
     values (${userId}, ${email}, ${body.name.trim()}, ${await hashPassword(body.password)})
   `;
   const token = await createEmailToken(userId, "verify", 24 * 60 * 60_000);
-  const sent = await sendVerificationEmail(email, token);
+  const sent = await sendVerificationEmail(email, token, body.next);
   await audit({ groupId: null, actorUserId: userId, action: "auth.signup", target: email });
   return c.json(
     {
@@ -151,6 +172,45 @@ auth.get("/me", requireAuth, (c) => {
   return c.json({ user: publicUser(auth.user, auth.session.csrfToken) });
 });
 
+auth.post("/change-password", requireAuth, async (c) => {
+  const auth = getAuth(c);
+  assertCsrf(c, auth);
+  rateLimit(`change-password:${auth.user.id}`, 5, 15 * 60_000);
+  const body = await parseJson(
+    c,
+    z.object({
+      currentPassword: z.string().min(1).max(128),
+      newPassword: passwordSchema,
+    }),
+  );
+  const rows = await sql<{ password_hash: string }[]>`
+    select password_hash from users where id = ${auth.user.id} limit 1
+  `;
+  if (!rows[0] || !(await verifyPassword(body.currentPassword, rows[0].password_hash))) {
+    throw badRequest("Your current password is incorrect.");
+  }
+  const missing = missingPasswordRequirements(body.newPassword);
+  if (missing.length > 0) {
+    throw badRequest(`New password must include ${joinList(missing)}.`);
+  }
+  if (body.currentPassword === body.newPassword) {
+    throw badRequest("Your new password must be different from the current one.");
+  }
+  await sql`
+    update users
+    set password_hash = ${await hashPassword(body.newPassword)}, updated_at = now()
+    where id = ${auth.user.id}
+  `;
+  // Keep this session signed in, sign out everywhere else.
+  await sql`delete from sessions where user_id = ${auth.user.id} and id <> ${auth.session.id}`;
+  await audit({ groupId: null, actorUserId: auth.user.id, action: "auth.password_changed" });
+  const notification = await sendPasswordChangedEmail(auth.user.email, {
+    attempts: 2,
+    timeoutMs: 8_000,
+  });
+  return c.json({ ok: true, emailSent: notification.sent });
+});
+
 auth.post("/logout", async (c) => {
   const session = await readSession(c);
   if (session) assertCsrf(c, session);
@@ -192,13 +252,13 @@ auth.get("/verify", async (c) => {
 
 auth.post("/resend-verification", async (c) => {
   assertOrigin(c);
-  const body = await parseJson(c, z.object({ email: emailSchema }));
+  const body = await parseJson(c, z.object({ email: emailSchema, next: z.string().max(2048).optional() }));
   const email = normalizeEmail(body.email);
   rateLimit(`resend:${clientIp(c)}:${email}`, 3, 15 * 60_000);
   const user = await findUserByEmail(email);
   if (user && !user.emailVerifiedAt) {
     const token = await createEmailToken(user.id, "verify", 24 * 60 * 60_000);
-    const sent = await sendVerificationEmail(email, token);
+    const sent = await sendVerificationEmail(email, token, body.next);
     return c.json({
       ok: true,
       message: "If the account needs verification, an email has been sent.",

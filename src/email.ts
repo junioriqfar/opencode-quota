@@ -1,5 +1,6 @@
 import { config } from "./config.ts";
 import { APP_NAME } from "../shared/brand.ts";
+import { safeNextPath } from "../shared/redirect.ts";
 
 interface SendEmailInput {
   to: string;
@@ -10,7 +11,19 @@ interface SendEmailInput {
 
 let warned = false;
 
-export async function sendEmail(input: SendEmailInput): Promise<{ sent: boolean; error?: string }> {
+interface SendEmailOptions {
+  attempts?: number;
+  timeoutMs?: number;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function sendEmail(
+  input: SendEmailInput,
+  options: SendEmailOptions = {},
+): Promise<{ sent: boolean; error?: string }> {
   if (!config.resendApiKey) {
     if (!warned) {
       warned = true;
@@ -21,33 +34,52 @@ export async function sendEmail(input: SendEmailInput): Promise<{ sent: boolean;
     return { sent: false };
   }
 
-  try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: config.emailFrom,
-        to: [input.to],
-        subject: input.subject,
-        html: input.html,
-        text: input.text,
-      }),
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (!response.ok) {
+  const attempts = Math.max(1, options.attempts ?? 3);
+  const timeoutMs = Math.max(1_000, options.timeoutMs ?? 10_000);
+  let lastError = "Could not send email.";
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: config.emailFrom,
+          to: [input.to],
+          subject: input.subject,
+          html: input.html,
+          text: input.text,
+        }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { id?: string };
+        console.log(
+          `[email] sent to=${input.to} subject=${input.subject}${body.id ? ` id=${body.id}` : ""}`,
+        );
+        return { sent: true };
+      }
       const body = await response.text();
-      console.error(`[email] Resend failed (${response.status}): ${body.slice(0, 300)}`);
-      return { sent: false, error: `Email provider error (${response.status}).` };
+      console.error(
+        `[email] Resend failed (${response.status}, attempt ${attempt}/${attempts}): ${body.slice(0, 300)}`,
+      );
+      lastError = `Email provider error (${response.status}).`;
+      // Retry only rate limits and provider-side failures.
+      if (response.status !== 429 && response.status < 500) {
+        return { sent: false, error: lastError };
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[email] attempt ${attempt}/${attempts} failed: ${message}`);
+      lastError = "Could not send email.";
     }
-    return { sent: true };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`[email] Resend request failed: ${message}`);
-    return { sent: false, error: "Could not send email." };
+    if (attempt < attempts) await sleep(attempt * 1_000);
   }
+
+  return { sent: false, error: lastError };
 }
 
 function layout(title: string, body: string): string {
@@ -60,8 +92,15 @@ function layout(title: string, body: string): string {
 </body></html>`;
 }
 
-export async function sendVerificationEmail(email: string, token: string): Promise<{ link: string; sent: boolean }> {
-  const link = `${config.appUrl}/verify?token=${encodeURIComponent(token)}`;
+export async function sendVerificationEmail(
+  email: string,
+  token: string,
+  nextPath?: string,
+): Promise<{ link: string; sent: boolean }> {
+  const next = safeNextPath(nextPath);
+  const link = `${config.appUrl}/verify?token=${encodeURIComponent(token)}${
+    next ? `&next=${encodeURIComponent(next)}` : ""
+  }`;
   const result = await sendEmail({
     to: email,
     subject: `Verify your ${APP_NAME} email`,
@@ -90,6 +129,32 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
     text: `Reset your password: ${link}`,
   });
   return { link, sent: result.sent };
+}
+
+export async function sendPasswordChangedEmail(
+  email: string,
+  options: SendEmailOptions = {},
+): Promise<{ sent: boolean }> {
+  const when = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date());
+  const link = `${config.appUrl}/forgot`;
+  const result = await sendEmail({
+    to: email,
+    subject: `Your ${APP_NAME} password was changed`,
+    html: layout(
+      "Password changed",
+      `<p>Your ${APP_NAME} account password was changed on <strong>${when}</strong> (Asia/Jakarta).</p>
+       <p>All other devices have been signed out. If this was you, no further action is needed.</p>
+       <p>If you did not change it, reset your password immediately and contact your administrator.</p>
+       <p><a href="${link}" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">Reset password</a></p>
+       <p>If you did not request this, ignore this email.</p>`,
+    ),
+    text: `Your ${APP_NAME} password was changed on ${when} (Asia/Jakarta). All other devices have been signed out. If this was not you, reset your password at ${link}`,
+  }, options);
+  return { sent: result.sent };
 }
 
 export async function sendInviteEmail(email: string, groupName: string, token: string): Promise<{ link: string; sent: boolean }> {

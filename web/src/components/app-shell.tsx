@@ -1,8 +1,20 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState, type ReactNode } from "react";
-import { Activity, LogOut, Moon, Shield, Sun, Users } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Activity,
+  Check,
+  ChevronDown,
+  Copyright,
+  KeyRound,
+  LogOut,
+  Moon,
+  Shield,
+  Sun,
+  Users,
+} from "lucide-react";
 import type { GroupListItem } from "@shared/types";
 import { APP_NAME } from "@shared/brand";
+import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +27,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -26,6 +46,16 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/lib/auth-context";
 import { notifySuccess } from "@/lib/notify";
 
+/** Two-letter avatar initials, falling back to the email when no name is set. */
+function initials(name: string | undefined, email: string | undefined): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length > 1) {
+    return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
+  }
+  if (parts.length === 1) return (parts[0]!.slice(0, 2) || "?").toUpperCase();
+  return (email?.trim()[0] ?? "?").toUpperCase();
+}
+
 export function AppShell({
   children,
   groupId,
@@ -34,11 +64,15 @@ export function AppShell({
   groupId?: string;
 }) {
   const { user, logout } = useAuth();
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
   const groups = useApi<{ groups: GroupListItem[] }>("/api/groups");
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  // Opening a modal while the dropdown is still closing leaves Radix's
+  // body pointer-events lock in place, so outside clicks stop working.
+  // Defer the dialog until the menu has fully closed.
+  const openPasswordOnMenuClose = useRef(false);
 
   useEffect(() => {
     const handler = () => groups.refresh();
@@ -101,24 +135,84 @@ export function AppShell({
               </div>
             )}
 
-            <div className="order-1 ml-auto flex items-center gap-1.5 sm:order-none">
-              {user?.isSuperadmin && (
-                <Button variant={location.pathname.startsWith("/admin") ? "secondary" : "ghost"} size="sm" asChild>
-                  <Link to="/admin" aria-label="Super-admin">
-                    <Shield />
-                    <span className="hidden sm:inline">Super-admin</span>
-                  </Link>
-                </Button>
-              )}
-              <span className="hidden max-w-[160px] truncate text-sm text-muted-foreground md:block">
-                {user?.name}
-              </span>
-              <Button variant="ghost" size="icon" onClick={toggle} title="Toggle theme" aria-label="Toggle theme">
-                {theme === "dark" ? <Sun /> : <Moon />}
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => setLogoutOpen(true)} title="Sign out" aria-label="Sign out">
-                <LogOut />
-              </Button>
+            <div className="order-1 ml-auto flex items-center sm:order-none">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="h-9 gap-2 px-1.5 sm:pr-2.5"
+                    aria-label="Account menu"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 via-sky-500 to-violet-500 text-[11px] font-semibold text-white shadow-sm shadow-emerald-500/20"
+                    >
+                      {initials(user?.name, user?.email)}
+                    </span>
+                    <span className="max-w-[120px] truncate text-sm font-medium sm:max-w-[160px]">
+                      {user?.name}
+                    </span>
+                    <ChevronDown className="hidden text-muted-foreground sm:block" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-60"
+                  onCloseAutoFocus={(event) => {
+                    event.preventDefault();
+                    if (openPasswordOnMenuClose.current) {
+                      openPasswordOnMenuClose.current = false;
+                      setPasswordOpen(true);
+                    }
+                  }}
+                >
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="truncate text-sm font-medium">{user?.name}</span>
+                      <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Theme
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem onSelect={() => setTheme("light")}>
+                    <Sun />
+                    Light
+                    {theme === "light" && <Check className="ml-auto" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setTheme("dark")}>
+                    <Moon />
+                    Dark
+                    {theme === "dark" && <Check className="ml-auto" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      openPasswordOnMenuClose.current = true;
+                    }}
+                  >
+                    <KeyRound />
+                    Change password
+                  </DropdownMenuItem>
+                  {user?.isSuperadmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">
+                        <Shield />
+                        Super-admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => setLogoutOpen(true)}
+                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  >
+                    <LogOut />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
@@ -126,7 +220,10 @@ export function AppShell({
         <footer className="mx-auto max-w-6xl px-4 pb-6 text-xs text-muted-foreground md:px-6">
           <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
             <span>{APP_NAME} · Private group workspace · data visible to group members only</span>
-            <span className="tabular-nums">{new Date().getFullYear()}</span>
+            <span className="inline-flex items-center gap-1 tabular-nums">
+              <Copyright className="h-3 w-3" aria-hidden="true" />
+              {new Date().getFullYear()}
+            </span>
           </div>
         </footer>
       </div>
@@ -152,6 +249,8 @@ export function AppShell({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} />
     </div>
   );
 }
