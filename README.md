@@ -200,6 +200,7 @@ If Turnstile is not configured, the server bypasses verification in development.
 
 - Owner creates an invite by email or link.
 - Email invites are sent by Resend; link invites are copied manually.
+- If the invited email already has an account, the invite also appears on that member's `/app` page as a pending invitation, so they can accept it without opening the link.
 - The invitee signs in with the invited email and accepts.
 - Members can see all members and usage in the group.
 
@@ -261,6 +262,7 @@ All endpoints are JSON and require a session cookie unless noted.
 - `POST /api/auth/login` — email, password.
 - `POST /api/auth/logout`
 - `GET /api/auth/me` — current user + CSRF token.
+- `POST /api/auth/change-password` — current + new password; signs out all other sessions.
 - `POST /api/auth/resend-verification`
 - `POST /api/auth/forgot`
 - `POST /api/auth/reset`
@@ -281,6 +283,8 @@ All endpoints are JSON and require a session cookie unless noted.
 - `DELETE /api/groups/:id/me`
 - `GET/POST/DELETE /api/groups/:id/invites`
 - `POST /api/invites/:token/accept`
+- `GET /api/invites` — pending invitations addressed to the signed-in user's email.
+- `POST /api/invites/accept` — accept a pending email invitation by id; body `{ "inviteId": "..." }`.
 - `GET/PUT/DELETE /api/groups/:id/console`
 - `POST /api/groups/:id/sync`
 - `GET /api/groups/:id/service-accounts?periodId=`
@@ -305,6 +309,8 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 ## Security
 
 - Passwords: Argon2id via `Bun.password`.
+- Password policy: at least 8 characters with an uppercase letter, a lowercase letter, a number, and a symbol (signup and change-password).
+- Password change notifies the account email and signs out all other sessions.
 - Sessions: random 32-byte token, SHA-256 hash in DB, HttpOnly/Secure/SameSite cookie.
 - CSRF: per-session token + Origin check.
 - Email tokens: one-time, hashed in DB, short expiry.
