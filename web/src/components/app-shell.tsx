@@ -88,7 +88,7 @@ export function AppShell({
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-clip">
+    <div className="relative min-h-[100dvh] overflow-x-clip">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:ring-2 focus:ring-ring"
@@ -99,7 +99,7 @@ export function AppShell({
       <div className="relative z-10">
         <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/65">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 py-3 md:px-6">
-            <Link to="/app" className="flex min-w-0 items-center gap-2.5">
+            <Link to="/app" className="flex min-w-0 flex-1 items-center gap-2.5 sm:flex-none">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-sky-500 to-violet-500 text-white shadow-md shadow-emerald-500/20">
                 <Activity className="h-[18px] w-[18px]" />
               </span>
@@ -140,7 +140,7 @@ export function AppShell({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="h-9 gap-2 px-1.5 sm:pr-2.5"
+                    className="h-10 gap-2 px-1.5 sm:h-9 sm:pr-2.5"
                     aria-label="Account menu"
                   >
                     <span
@@ -149,7 +149,7 @@ export function AppShell({
                     >
                       {initials(user?.name, user?.email)}
                     </span>
-                    <span className="max-w-[120px] truncate text-sm font-medium sm:max-w-[160px]">
+                    <span className="hidden max-w-[160px] truncate text-sm font-medium md:inline">
                       {user?.name}
                     </span>
                     <ChevronDown className="hidden text-muted-foreground sm:block" />
@@ -157,7 +157,7 @@ export function AppShell({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-60"
+                  className="w-60 max-w-[calc(100vw-2rem)]"
                   onCloseAutoFocus={(event) => {
                     event.preventDefault();
                     if (openPasswordOnMenuClose.current) {

@@ -19,7 +19,7 @@ import { VerifyPage } from "@/pages/verify";
 function NotFound() {
   usePageMeta({ title: "Page not found" });
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-muted/30 px-4">
+    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-muted/30 px-4">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-50 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
       <div className="relative w-full max-w-md rounded-2xl border bg-card p-8 text-center shadow-xl shadow-foreground/5">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-sky-500 to-violet-500 text-white shadow-lg shadow-emerald-500/20">

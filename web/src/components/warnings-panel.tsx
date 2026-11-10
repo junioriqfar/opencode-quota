@@ -20,7 +20,7 @@ export function WarningsPanel({
       <AlertDescription>
         <ul className="list-disc space-y-1 pl-4">
           {warnings.map((warning) => (
-            <li key={warning}>{warning}</li>
+            <li key={warning} className="break-words">{warning}</li>
           ))}
         </ul>
       </AlertDescription>

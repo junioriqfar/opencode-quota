@@ -50,16 +50,16 @@ function MeterCard({
       <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-2xl" />
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <Icon className="h-[18px] w-[18px]" />
             </span>
-            <div>
-              <div className="text-sm font-medium">{label}</div>
-              <div className="text-[11px] text-muted-foreground">{hint}</div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium">{label}</div>
+              <div className="truncate text-[11px] text-muted-foreground">{hint}</div>
             </div>
           </div>
-          <Badge variant={colors.badge}>
+          <Badge variant={colors.badge} className="shrink-0">
             <StatusIcon className="h-3 w-3" />
             {colors.label}
           </Badge>
@@ -92,7 +92,7 @@ function MeterCard({
 
 export function QuotaCards({ summary }: { summary: GroupSummary }) {
   return (
-    <section className="grid gap-3 md:grid-cols-3">
+    <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
       <MeterCard label="Monthly" hint="Main period limit" meter={summary.quota.month} icon={CalendarRange} />
       <MeterCard label="Weekly" hint="7-day sub-limit" meter={summary.quota.week} icon={TrendingUp} />
       <MeterCard label="5 hours" hint="Rolling window" meter={summary.quota.fiveHour} icon={Timer} />

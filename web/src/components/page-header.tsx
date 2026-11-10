@@ -37,7 +37,7 @@ export function PageHeader({
               </Link>
             </Button>
           )}
-          <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold tracking-tight">
+          <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold tracking-tight [&>svg]:shrink-0">
             {icon}
             <span className="truncate">{title}</span>
           </h1>

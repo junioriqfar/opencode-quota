@@ -190,11 +190,11 @@ export function MemberModelUsageDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-5xl overflow-y-auto">
+      <DialogContent className="max-h-[85dvh] max-w-5xl overflow-y-auto overscroll-contain">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Boxes className="h-5 w-5 text-primary" />
-            Model usage · {name}
+          <DialogTitle className="flex min-w-0 items-center gap-2">
+            <Boxes className="h-5 w-5 shrink-0 text-primary" />
+            <span className="truncate">Model usage · {name}</span>
           </DialogTitle>
           <DialogDescription>
             Requests, tokens, list cost, and share per model for this member.

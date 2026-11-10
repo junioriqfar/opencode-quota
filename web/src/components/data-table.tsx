@@ -120,7 +120,7 @@ export function DataTable<T>({
             value={String(pageSize)}
             onValueChange={(value) => setPageSize(Number.parseInt(value, 10))}
           >
-            <SelectTrigger className="!h-8 w-[76px] text-xs" aria-label="Rows per page">
+            <SelectTrigger className="!h-9 w-[80px] text-xs" aria-label="Rows per page">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -150,7 +150,7 @@ export function DataTable<T>({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="-ml-2 h-7 gap-1 px-2 text-[11px] font-semibold uppercase tracking-wide"
+                      className="-ml-2 h-8 gap-1 px-2 text-[11px] font-semibold uppercase tracking-wide"
                       onClick={() => toggleSort(column.key)}
                       aria-label={`Sort by ${typeof column.header === "string" ? column.header : column.key}`}
                     >
@@ -201,7 +201,7 @@ export function DataTable<T>({
             type="button"
             variant="ghost"
             size="icon"
-            className="!h-8 !w-8"
+            className="!h-9 !w-9"
             disabled={currentPage === 1}
             onClick={() => setPage(1)}
             aria-label="First page"
@@ -212,7 +212,7 @@ export function DataTable<T>({
             type="button"
             variant="ghost"
             size="icon"
-            className="!h-8 !w-8"
+            className="!h-9 !w-9"
             disabled={currentPage === 1}
             onClick={() => setPage((value) => Math.max(1, value - 1))}
             aria-label="Previous page"
@@ -226,7 +226,7 @@ export function DataTable<T>({
                 type="button"
                 variant={entry === currentPage ? "default" : "ghost"}
                 size="icon"
-                className="!h-8 !w-8 text-xs"
+                className="!h-9 !w-9 text-xs"
                 onClick={() => setPage(entry)}
                 aria-label={`Page ${entry}`}
                 aria-current={entry === currentPage ? "page" : undefined}
@@ -243,7 +243,7 @@ export function DataTable<T>({
             type="button"
             variant="ghost"
             size="icon"
-            className="!h-8 !w-8"
+            className="!h-9 !w-9"
             disabled={currentPage === totalPages}
             onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             aria-label="Next page"
@@ -254,7 +254,7 @@ export function DataTable<T>({
             type="button"
             variant="ghost"
             size="icon"
-            className="!h-8 !w-8"
+            className="!h-9 !w-9"
             disabled={currentPage === totalPages}
             onClick={() => setPage(totalPages)}
             aria-label="Last page"

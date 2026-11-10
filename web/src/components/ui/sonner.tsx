@@ -10,6 +10,7 @@ export function Toaster(props: ToasterProps) {
       richColors
       closeButton
       position="top-right"
+      mobileOffset={{ top: 64, right: 12, left: 12 }}
       toastOptions={{ duration: 4000 }}
       {...props}
     />

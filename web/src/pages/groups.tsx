@@ -127,7 +127,7 @@ export function GroupsPage() {
         </Alert>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
         <section className="space-y-3">
           {pending.data?.invites.length ? (
             <Card className="border-primary/40 bg-primary/5">
@@ -185,18 +185,18 @@ export function GroupsPage() {
                 <Card className="transition-colors hover:border-primary/30 hover:bg-muted/20">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-sky-500/10 text-emerald-600 dark:text-emerald-400">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-sky-500/10 text-emerald-600 dark:text-emerald-400">
                           <Activity className="h-5 w-5" />
                         </div>
-                        <div>
-                          <CardTitle className="truncate">{group.name}</CardTitle>
-                          <CardDescription>
+                        <div className="min-w-0">
+                          <CardTitle className="truncate" title={group.name}>{group.name}</CardTitle>
+                          <CardDescription className="truncate">
                             Owner {group.ownerName} · {group.memberCount} member{group.memberCount === 1 ? "" : "s"}
                           </CardDescription>
                         </div>
                       </div>
-                      <ArrowRight className="mt-1 h-4 w-4 text-muted-foreground" />
+                      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
                     </div>
                   </CardHeader>
                   <CardContent className="flex flex-wrap items-center gap-2 text-xs">

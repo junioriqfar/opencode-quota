@@ -254,28 +254,28 @@ export function GroupAdminPage() {
       />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-4 !h-auto w-full grid grid-cols-3 gap-1 sm:flex sm:flex-wrap sm:justify-start">
-          <TabsTrigger value="connection" className="h-10 gap-1.5 sm:h-9">
+        <TabsList className="mb-4 !h-auto w-full grid grid-cols-2 gap-1 sm:flex sm:flex-wrap sm:justify-start">
+          <TabsTrigger value="connection" className="h-10 min-w-0 gap-1.5 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
             <PlugZap className="h-4 w-4" />
             Connection
           </TabsTrigger>
-          <TabsTrigger value="members" className="h-10 gap-1.5 sm:h-9">
+          <TabsTrigger value="members" className="h-10 min-w-0 gap-1.5 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
             <Users className="h-4 w-4" />
             Members
           </TabsTrigger>
-          <TabsTrigger value="mapping" className="h-10 gap-1.5 sm:h-9">
+          <TabsTrigger value="mapping" className="h-10 min-w-0 gap-1.5 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
             <GitBranch className="h-4 w-4" />
             Mapping
           </TabsTrigger>
-          <TabsTrigger value="billing" className="h-10 gap-1.5 sm:h-9">
+          <TabsTrigger value="billing" className="h-10 min-w-0 gap-1.5 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
             <Receipt className="h-4 w-4" />
             Billing
           </TabsTrigger>
-          <TabsTrigger value="audit" className="h-10 gap-1.5 sm:h-9">
+          <TabsTrigger value="audit" className="h-10 min-w-0 gap-1.5 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
             <ScrollText className="h-4 w-4" />
             Audit
           </TabsTrigger>
-          <TabsTrigger value="settings" className="h-10 gap-1.5 sm:h-9">
+          <TabsTrigger value="settings" className="h-10 min-w-0 gap-1.5 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
             <Settings2 className="h-4 w-4" />
             Settings
           </TabsTrigger>
@@ -416,7 +416,7 @@ function ConnectionTab({
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {!connection.connected && (
         <Alert variant="info" className="lg:col-span-2">
           <KeyRound className="h-4 w-4" />
@@ -611,7 +611,7 @@ function SettingsTab({
         </Alert>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -761,14 +761,22 @@ function MembersTab({
       key: "name",
       header: "Name",
       sortValue: (member) => member.name,
-      cell: (member) => <span className="font-medium">{member.name}</span>,
+      cell: (member) => (
+        <span className="block max-w-[180px] truncate font-medium" title={member.name}>
+          {member.name}
+        </span>
+      ),
     },
     {
       key: "email",
       header: "Email",
       className: "text-muted-foreground",
       sortValue: (member) => member.email ?? "",
-      cell: (member) => member.email ?? "—",
+      cell: (member) => (
+        <span className="block max-w-[220px] truncate" title={member.email ?? undefined}>
+          {member.email ?? "—"}
+        </span>
+      ),
     },
     {
       key: "role",
@@ -842,7 +850,11 @@ function MembersTab({
       key: "email",
       header: "Email",
       sortValue: (invite) => invite.email ?? "",
-      cell: (invite) => invite.email ?? "Link invite",
+      cell: (invite) => (
+        <span className="block max-w-[220px] truncate" title={invite.email ?? undefined}>
+          {invite.email ?? "Link invite"}
+        </span>
+      ),
     },
     {
       key: "status",
@@ -1161,8 +1173,8 @@ function MappingTab({
       sortValue: (account) => account.name,
       cell: (account) => (
         <div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{account.name}</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="max-w-[180px] truncate font-medium" title={account.name}>{account.name}</span>
             {account.isReader && (
               <Badge variant="secondary">
                 <Eye className="h-3 w-3" />
@@ -1187,7 +1199,14 @@ function MappingTab({
       header: "Keys",
       className: "text-xs text-muted-foreground",
       sortValue: (account) => account.keyNames.join(", "),
-      cell: (account) => account.keyNames.join(", ") || "—",
+      cell: (account) => {
+        const keys = account.keyNames.join(", ");
+        return (
+          <div className="max-w-[220px] truncate" title={keys}>
+            {keys || "—"}
+          </div>
+        );
+      },
     },
     {
       key: "cost",
@@ -1481,7 +1500,7 @@ function BillingTab({
   ];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -1588,7 +1607,7 @@ function BillingTab({
             />
           )}
           {summary.data?.unmapped.length ? (
-            <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+            <div className="mt-4 break-words rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
               Unmapped usage: {summary.data.unmapped.map((account) => account.name).join(", ")}. Finalization is blocked until these accounts are mapped.
             </div>
           ) : null}
@@ -1712,9 +1731,13 @@ function AuditTab({ audit }: { audit: ReturnType<typeof useApi<{ logs: AuditLogI
     {
       key: "details",
       header: "Details",
-      className: "max-w-[320px] truncate",
+      className: "max-w-[320px]",
       sortValue: (log) => auditSummary(log),
-      cell: (log) => auditSummary(log),
+      cell: (log) => (
+        <div className="max-w-[320px] truncate" title={auditSummary(log)}>
+          {auditSummary(log)}
+        </div>
+      ),
     },
     {
       key: "actions",

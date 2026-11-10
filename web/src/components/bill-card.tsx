@@ -12,15 +12,15 @@ export function BillCard({ summary }: { summary: GroupSummary }) {
   const isFinalized = summary.period.status === "finalized";
   return (
     <Card>
-      <CardHeader className="flex-row items-start justify-between space-y-0">
-        <div>
+      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+        <div className="min-w-0">
           <CardTitle className="flex items-center gap-2">
             <Receipt className="h-4 w-4 text-muted-foreground" />
             Billing
           </CardTitle>
           <CardDescription>Total IDR is entered manually by the group owner</CardDescription>
         </div>
-        <Badge variant="secondary" className="font-normal">
+        <Badge variant="secondary" className="shrink-0 font-normal">
           <Gauge className="h-3 w-3" />
           Go {formatUsd(summary.plan.priceUsd)}
         </Badge>
@@ -31,7 +31,7 @@ export function BillCard({ summary }: { summary: GroupSummary }) {
             <Banknote className="h-3.5 w-3.5" />
             Total bill for this period
           </div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">
+          <div className="mt-1 text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">
             {totalIdr === null ? <span className="text-xl text-muted-foreground">Not set</span> : formatIdr(totalIdr)}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">

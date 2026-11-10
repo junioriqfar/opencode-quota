@@ -10,6 +10,7 @@ declare global {
           callback: (token: string) => void;
           "expired-callback"?: () => void;
           theme?: "light" | "dark" | "auto";
+          size?: "normal" | "compact" | "flexible";
         },
       ) => string;
       remove: (widgetId: string) => void;
@@ -65,6 +66,7 @@ export const Turnstile = forwardRef<TurnstileHandle, {
       if (cancelled || !window.turnstile || !container.current || widget.current) return;
       widget.current = window.turnstile.render(container.current, {
         sitekey: siteKey,
+        size: "flexible",
         theme: document.documentElement.classList.contains("dark") ? "dark" : "light",
         callback: (token) => callback.current(token),
         "expired-callback": () => callback.current(""),
@@ -80,6 +82,6 @@ export const Turnstile = forwardRef<TurnstileHandle, {
   }, [siteKey]);
 
   if (!siteKey) return null;
-  return <div ref={container} className="flex justify-center" />;
+  return <div ref={container} className="flex min-h-[65px] w-full justify-center" />;
 });
 Turnstile.displayName = "Turnstile";

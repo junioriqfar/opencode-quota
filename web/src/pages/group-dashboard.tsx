@@ -101,7 +101,7 @@ export function GroupDashboardPage() {
       <AppShell groupId={groupId}>
         <div className="space-y-4">
           <Skeleton className="h-12 w-64" />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Skeleton className="h-36" />
             <Skeleton className="h-36" />
             <Skeleton className="h-36" />
@@ -175,7 +175,7 @@ export function GroupDashboardPage() {
                 value={periodId ?? "current"}
                 onValueChange={(value) => selectPeriod(value === "current" ? "" : value)}
               >
-                <SelectTrigger className="w-[230px]">
+                <SelectTrigger className="w-full sm:w-[230px]" aria-label="Billing period">
                   <CalendarRange className="mr-2 h-4 w-4 text-muted-foreground" />
                   <SelectValue placeholder="Current period" />
                 </SelectTrigger>
@@ -292,14 +292,14 @@ export function GroupDashboardPage() {
               </Alert>
             )}
 
-          <section className="grid gap-4 lg:grid-cols-5 lg:gap-6">
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-5 lg:gap-6">
             <ShareChart summary={summary.data} className="lg:col-span-2" />
             <DailyChart history={history.data ?? { period: summary.data.period, members: [], days: [] }} className="lg:col-span-3" />
           </section>
 
           <MembersTable summary={summary.data} groupId={groupId} />
 
-          <section className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
             <ReconciliationCard summary={summary.data} />
             <BillCard summary={summary.data} />
           </section>

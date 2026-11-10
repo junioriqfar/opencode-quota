@@ -211,8 +211,8 @@ export function MembersTable({
 
   return (
     <Card>
-      <CardHeader className="flex-row items-start justify-between space-y-0">
-        <div>
+      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+        <div className="min-w-0">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
             Members
@@ -221,7 +221,7 @@ export function MembersTable({
             Everyone in this group can see all members and usage. Bills use list cost share.
           </CardDescription>
         </div>
-        <Badge variant={summary.period.status === "finalized" ? "success" : "secondary"} className="font-normal">
+        <Badge variant={summary.period.status === "finalized" ? "success" : "secondary"} className="shrink-0 font-normal">
           {summary.period.status === "finalized" ? <Lock className="h-3 w-3" /> : <Pencil className="h-3 w-3" />}
           {summary.period.status === "finalized" ? "Finalized" : "Draft"}
         </Badge>

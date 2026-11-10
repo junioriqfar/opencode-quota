@@ -115,8 +115,8 @@ export function InvitePage() {
             <Alert variant="info">
               <Mail className="h-4 w-4" />
               <AlertDescription>
-                This invitation is reserved for <strong>{invite.email}</strong>. You are signed in as{" "}
-                <strong>{user.email}</strong>.
+                This invitation is reserved for <strong className="break-all">{invite.email}</strong>. You are signed in as{" "}
+                <strong className="break-all">{user.email}</strong>.
               </AlertDescription>
             </Alert>
           )}

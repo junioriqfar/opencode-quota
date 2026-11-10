@@ -22,15 +22,15 @@ export function DailyChart({ history, className }: { history: HistoryResponse; c
 
   return (
     <Card className={cn(className)}>
-      <CardHeader className="flex-row items-start justify-between space-y-0 pb-2">
-        <div>
+      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-2">
+        <div className="min-w-0">
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
             Daily usage
           </CardTitle>
           <CardDescription>List cost per day, stacked by member</CardDescription>
         </div>
-        <Badge variant="outline" className="font-normal tabular-nums">
+        <Badge variant="outline" className="shrink-0 font-normal tabular-nums">
           <CalendarDays className="h-3 w-3" />
           {formatUsd(history.days.reduce((sum, day) => sum + day.totalUsd, 0), true)}
         </Badge>
@@ -106,7 +106,7 @@ export function DailyChart({ history, className }: { history: HistoryResponse; c
               {history.days.map((day, index) => {
                 const show = index === 0 || index === history.days.length - 1 || index % labelEvery === 0;
                 return (
-                  <span key={day.day} className="min-w-0 flex-1 text-center">
+                  <span key={day.day} className="min-w-0 flex-1 overflow-hidden text-center">
                     {show ? formatDay(day.day) : ""}
                   </span>
                 );
@@ -114,9 +114,9 @@ export function DailyChart({ history, className }: { history: HistoryResponse; c
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs">
               {history.members.map((member) => (
-                <span key={member.userId} className="inline-flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors.get(member.userId) }} />
-                  {member.name}
+                <span key={member.userId} className="inline-flex min-w-0 max-w-[180px] items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: colors.get(member.userId) }} />
+                  <span className="truncate">{member.name}</span>
                 </span>
               ))}
             </div>

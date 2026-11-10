@@ -11,15 +11,15 @@ export function ReconciliationCard({ summary }: { summary: GroupSummary }) {
 
   return (
     <Card>
-      <CardHeader className="flex-row items-start justify-between space-y-0">
-        <div>
+      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+        <div className="min-w-0">
           <CardTitle className="flex items-center gap-2">
             <Scale className="h-4 w-4 text-muted-foreground" />
             Reconciliation
           </CardTitle>
           <CardDescription>Official Go meter vs daily export list cost</CardDescription>
         </div>
-        <Badge variant="info" className="gap-1 font-normal">
+        <Badge variant="info" className="shrink-0 gap-1 font-normal">
           <ArrowRightLeft className="h-3 w-3" />
           Info
         </Badge>

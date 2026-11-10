@@ -82,7 +82,7 @@ export function SetupPage() {
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
             <PasswordInput id="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />

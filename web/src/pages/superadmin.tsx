@@ -116,7 +116,7 @@ export function SuperadminPage() {
       sortValue: (group) => group.name,
       cell: (group) => (
         <div>
-          <div className="font-medium">{group.name}</div>
+          <div className="max-w-[180px] truncate font-medium" title={group.name}>{group.name}</div>
           <div className="text-[11px] text-muted-foreground">{group.memberCount} members</div>
         </div>
       ),
@@ -129,8 +129,8 @@ export function SuperadminPage() {
       sortValue: (group) => group.ownerName,
       cell: (group) => (
         <div>
-          <div>{group.ownerName}</div>
-          <div className="text-[11px] text-muted-foreground">{group.ownerEmail}</div>
+          <div className="max-w-[160px] truncate" title={group.ownerName}>{group.ownerName}</div>
+          <div className="max-w-[200px] truncate text-[11px] text-muted-foreground" title={group.ownerEmail}>{group.ownerEmail}</div>
         </div>
       ),
     },
@@ -234,7 +234,7 @@ export function SuperadminPage() {
         </Alert>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -316,19 +316,23 @@ export function SuperadminPage() {
               </div>
               <div className="space-y-1">
                 {(health.data?.recentSyncs ?? []).slice(0, 5).map((run) => (
-                  <div key={`${run.groupId}-${run.startedAt}`} className="flex items-center justify-between gap-2 text-xs">
-                    <span className="truncate text-muted-foreground">{run.groupId.slice(0, 8)}…</span>
-                    <Badge variant={run.status === "ok" ? "success" : run.status === "running" ? "info" : "destructive"} className="font-normal">
-                      {run.status === "ok" ? (
-                        <CheckCircle2 className="h-3 w-3" />
-                      ) : run.status === "running" ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <XCircle className="h-3 w-3" />
-                      )}
-                      {run.status}
-                    </Badge>
-                    <span className="w-20 text-right text-muted-foreground">{formatDateTime(run.startedAt)}</span>
+                  <div key={`${run.groupId}-${run.startedAt}`} className="flex items-center justify-between gap-3 text-xs">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-muted-foreground">{run.groupId.slice(0, 8)}…</span>
+                      <Badge variant={run.status === "ok" ? "success" : run.status === "running" ? "info" : "destructive"} className="shrink-0 font-normal">
+                        {run.status === "ok" ? (
+                          <CheckCircle2 className="h-3 w-3" />
+                        ) : run.status === "running" ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <XCircle className="h-3 w-3" />
+                        )}
+                        {run.status}
+                      </Badge>
+                    </div>
+                    <span className="shrink-0 whitespace-nowrap tabular-nums text-muted-foreground">
+                      {relativeTime(run.startedAt)}
+                    </span>
                   </div>
                 ))}
                 {!health.data?.recentSyncs.length && <p className="text-xs text-muted-foreground">No sync runs yet.</p>}

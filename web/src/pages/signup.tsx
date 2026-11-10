@@ -80,7 +80,7 @@ export function SignupPage() {
             <CheckCircle2 className="h-4 w-4" />
             <AlertTitle>Verification email sent</AlertTitle>
             <AlertDescription>
-              We sent a verification link to <strong>{success.email}</strong>.
+              We sent a verification link to <strong className="break-all">{success.email}</strong>.
               {success.devVerifyUrl && (
                 <p className="mt-2">
                   Development mode:{" "}
@@ -127,7 +127,7 @@ export function SignupPage() {
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
             <PasswordInput id="password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />

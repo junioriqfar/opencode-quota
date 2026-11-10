@@ -29,15 +29,15 @@ export function ShareChart({ summary, className }: { summary: GroupSummary; clas
 
   return (
     <Card className={cn(className)}>
-      <CardHeader className="flex-row items-start justify-between space-y-0 pb-2">
-        <div>
+      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-2">
+        <div className="min-w-0">
           <CardTitle className="flex items-center gap-2">
             <PieChart className="h-4 w-4 text-muted-foreground" />
             Usage share
           </CardTitle>
           <CardDescription>List cost proportion for this period</CardDescription>
         </div>
-        <Badge variant="outline" className="font-normal">
+        <Badge variant="outline" className="shrink-0 font-normal">
           <Users className="h-3 w-3" />
           {data.length} {data.length === 1 ? "member" : "members"}
         </Badge>
