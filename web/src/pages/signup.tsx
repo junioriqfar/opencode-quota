@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { safeNextPath } from "@shared/redirect";
 import { AuthLayout } from "@/components/auth-layout";
 import { Turnstile } from "@/components/turnstile";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrength, missingPasswordRules } from "@/components/password-strength";
 import { useAuth } from "@/lib/auth-context";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { usePageMeta } from "@/hooks/use-page-meta";
@@ -22,6 +24,9 @@ export function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ email: string; devVerifyUrl?: string; emailSent: boolean } | null>(null);
+  const [search] = useSearchParams();
+  const next = safeNextPath(search.get("next"));
+  const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
   usePageMeta({ title: success ? "Check your email" : "Create account" });
 
   if (!loading && user) return <Navigate to="/app" replace />;
@@ -34,6 +39,11 @@ export function SignupPage() {
       setError("Password must be at least 8 characters.");
       return;
     }
+    const missing = missingPasswordRules(password);
+    if (missing.length > 0) {
+      setError(`Password must include ${missing.join(", ")}.`);
+      return;
+    }
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
@@ -44,7 +54,7 @@ export function SignupPage() {
     }
     setSubmitting(true);
     try {
-      const result = await signup({ name, email, password, turnstileToken });
+      const result = await signup({ name, email, password, turnstileToken, next });
       setSuccess({ email: result.email, devVerifyUrl: result.devVerifyUrl, emailSent: result.emailSent });
       notifySuccess("Account created. Check your email.");
     } catch (err) {
@@ -60,7 +70,7 @@ export function SignupPage() {
       <AuthLayout
         title="Check your email"
         subtitle="Verify your address to activate your account."
-        footer={<Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/login">Back to sign in</Link>}
+        footer={<Link className="font-medium text-foreground underline-offset-4 hover:underline" to={loginHref}>Back to sign in</Link>}
       >
         <div className="space-y-4">
           <Alert variant="info">
@@ -93,7 +103,7 @@ export function SignupPage() {
       footer={
         <>
           Already have an account?{" "}
-          <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/login">
+          <Link className="font-medium text-foreground underline-offset-4 hover:underline" to={loginHref}>
             Sign in
           </Link>
         </>
@@ -124,6 +134,7 @@ export function SignupPage() {
             <PasswordInput id="confirm" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </div>
         </div>
+        <PasswordStrength value={password} />
         <Turnstile siteKey={config?.turnstileSiteKey ?? ""} onToken={setTurnstileToken} />
         <Button className="w-full" type="submit" disabled={submitting}>
           {submitting && <Loader2 className="animate-spin" />}
