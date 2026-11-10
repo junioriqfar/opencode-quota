@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, Loader2, Mail, UserPlus } from "lucide-react";
+import { AlertTriangle, Loader2, LogIn, Mail, UserPlus } from "lucide-react";
 import { AuthLayout } from "@/components/auth-layout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -97,10 +97,16 @@ export function InvitePage() {
             Sign in with the invited email address to accept this invitation.
           </p>
           <Button asChild className="w-full">
-            <Link to={`/login?next=${encodeURIComponent(next)}`}>Sign in to accept</Link>
+            <Link to={`/login?next=${encodeURIComponent(next)}`}>
+              <LogIn />
+              Sign in to accept
+            </Link>
           </Button>
           <Button asChild variant="outline" className="w-full">
-            <Link to={`/signup?next=${encodeURIComponent(next)}`}>Create an account</Link>
+            <Link to={`/signup?next=${encodeURIComponent(next)}`}>
+              <UserPlus />
+              Create an account
+            </Link>
           </Button>
         </div>
       ) : (

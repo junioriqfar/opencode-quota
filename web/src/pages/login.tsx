@@ -23,6 +23,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const next = search.get("next") || "/app";
+  const signupHref = next === "/app" ? "/signup" : `/signup?next=${encodeURIComponent(next)}`;
   usePageMeta({ title: "Sign in" });
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export function LoginPage() {
     try {
       const result = await post<{ message: string; devVerifyUrl?: string }>(
         "/api/auth/resend-verification",
-        { email },
+        { email, next: next === "/app" ? undefined : next },
       );
       setResendMessage(result.message);
       setDevVerifyUrl(result.devVerifyUrl ?? null);
@@ -75,7 +76,7 @@ export function LoginPage() {
       footer={
         <>
           New here?{" "}
-          <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/signup">
+          <Link className="font-medium text-foreground underline-offset-4 hover:underline" to={signupHref}>
             Create an account
           </Link>
         </>

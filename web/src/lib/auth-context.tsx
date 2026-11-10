@@ -30,6 +30,7 @@ interface AuthContextValue {
     email: string;
     password: string;
     turnstileToken?: string;
+    next?: string;
   }) => Promise<SignupResponse>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -90,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: string;
       password: string;
       turnstileToken?: string;
+      next?: string;
     }) => post<SignupResponse>("/api/auth/signup", input),
     [],
   );

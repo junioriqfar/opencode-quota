@@ -33,6 +33,16 @@ export interface GroupListItem {
   monthlyPercent: number | null;
 }
 
+/** A pending invitation addressed to the signed-in user's email. */
+export interface PendingInvite {
+  id: string;
+  groupName: string;
+  role: GroupRole;
+  invitedBy: string;
+  expiresAt: string | null;
+  createdAt: string | null;
+}
+
 export interface PeriodInfo {
   id: string;
   start: string;

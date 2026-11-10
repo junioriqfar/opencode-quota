@@ -9,10 +9,13 @@ import { useAuth } from "@/lib/auth-context";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import type { CurrentUser } from "@shared/types";
+import { safeNextPath } from "@shared/redirect";
 
 export function VerifyPage() {
   const [search] = useSearchParams();
   const token = search.get("token") ?? "";
+  const next = safeNextPath(search.get("next")) ?? "/app";
+  const loginHref = next === "/app" ? "/login" : `/login?next=${encodeURIComponent(next)}`;
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +33,13 @@ export function VerifyPage() {
       .then((result) => {
         setUser(result.user);
         notifySuccess("Email verified.");
-        navigate("/app", { replace: true });
+        navigate(next, { replace: true });
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : "Verification failed.");
         notifyError(err, "Verification failed.");
       });
-  }, [token, setUser, navigate]);
+  }, [token, setUser, navigate, next]);
 
   return (
     <AuthLayout title="Verifying your email" subtitle="One moment while we activate your account.">
@@ -47,7 +50,7 @@ export function VerifyPage() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           <Button asChild className="w-full" variant="outline">
-            <Link to="/login">Back to sign in</Link>
+            <Link to={loginHref}>Back to sign in</Link>
           </Button>
         </div>
       ) : (

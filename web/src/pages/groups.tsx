@@ -7,17 +7,20 @@ import {
   Crown,
   Gauge,
   LayoutGrid,
+  Loader2,
   Lock,
+  MailPlus,
   Pencil,
   Plug,
   PlugZap,
   Plus,
   PlusCircle,
   RefreshCw,
+  UserPlus,
   UserRound,
   Users,
 } from "lucide-react";
-import type { GroupListItem } from "@shared/types";
+import type { GroupListItem, PendingInvite } from "@shared/types";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -32,15 +35,37 @@ import { useApi } from "@/hooks/use-api";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import { post } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
-import { formatPct, relativeTime } from "@/lib/format";
+import { formatPct, formatDateTime, relativeTime } from "@/lib/format";
 
 export function GroupsPage() {
   const groups = useApi<{ groups: GroupListItem[] }>("/api/groups");
+  const pending = useApi<{ invites: PendingInvite[] }>("/api/invites");
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   usePageMeta({ title: "Your groups" });
+
+  const acceptInvite = async (invite: PendingInvite) => {
+    setError(null);
+    setAcceptingId(invite.id);
+    try {
+      const result = await post<{ group: { id: string; name: string } }>("/api/invites/accept", {
+        inviteId: invite.id,
+      });
+      pending.refresh();
+      groups.refresh();
+      window.dispatchEvent(new Event("groups:changed"));
+      notifySuccess(`Joined ${result.group.name}.`);
+      navigate(`/app/g/${result.group.id}`, { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not accept the invitation.");
+      notifyError(err, "Could not accept the invitation.");
+    } finally {
+      setAcceptingId(null);
+    }
+  };
 
   const createGroup = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -68,12 +93,21 @@ export function GroupsPage() {
         title="Your groups"
         description="Each group is private. Members can see every member and usage inside that group."
         meta={
-          groups.data ? (
-            <Badge variant="outline" className="font-normal">
-              <Users className="h-3 w-3" />
-              {groups.data.groups.length} group{groups.data.groups.length === 1 ? "" : "s"}
-            </Badge>
-          ) : null
+          <>
+            {groups.data ? (
+              <Badge variant="outline" className="font-normal">
+                <Users className="h-3 w-3" />
+                {groups.data.groups.length} group{groups.data.groups.length === 1 ? "" : "s"}
+              </Badge>
+            ) : null}
+            {pending.data?.invites.length ? (
+              <Badge variant="default" className="font-normal">
+                <MailPlus className="h-3 w-3" />
+                {pending.data.invites.length} pending invitation
+                {pending.data.invites.length === 1 ? "" : "s"}
+              </Badge>
+            ) : null}
+          </>
         }
         actions={
           <Button
@@ -95,6 +129,43 @@ export function GroupsPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <section className="space-y-3">
+          {pending.data?.invites.length ? (
+            <Card className="border-primary/40 bg-primary/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <MailPlus className="h-4 w-4 text-primary" />
+                  Pending invitations
+                </CardTitle>
+                <CardDescription>
+                  These invitations were sent to your email. Accept one to join its group.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {pending.data.invites.map((invite) => (
+                  <div
+                    key={invite.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background/70 p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{invite.groupName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Invited by {invite.invitedBy} as a {invite.role} · expires{" "}
+                        {formatDateTime(invite.expiresAt)}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => acceptInvite(invite)}
+                      disabled={acceptingId === invite.id}
+                    >
+                      {acceptingId === invite.id ? <Loader2 className="animate-spin" /> : <UserPlus />}
+                      Accept
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
           {groups.loading ? (
             <>
               <Skeleton className="h-32 w-full" />
