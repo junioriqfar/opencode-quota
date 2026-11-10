@@ -56,7 +56,6 @@ export function SuperadminPage() {
   const [signupOpen, setSignupOpen] = useState("true");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   usePageMeta({ title: "Super-admin" });
 
   useEffect(() => {
@@ -68,7 +67,6 @@ export function SuperadminPage() {
   const saveSettings = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
-    setMessage(null);
     setSaving(true);
     try {
       await put("/api/admin/settings", {
@@ -76,7 +74,6 @@ export function SuperadminPage() {
         signupOpen: signupOpen === "true",
       });
       settings.refresh();
-      setMessage("Settings saved.");
       notifySuccess("Settings saved.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save settings.");
@@ -234,11 +231,6 @@ export function SuperadminPage() {
       {error && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      {message && (
-        <Alert variant="info" className="mb-4">
-          <AlertDescription>{message}</AlertDescription>
         </Alert>
       )}
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   AlertTriangle,
@@ -150,14 +150,48 @@ export function GroupAdminPage() {
       : null,
   );
 
+  const previousTab = useRef<Tab | null>(null);
   useEffect(() => {
-    if (tab === "audit") audit.refresh();
-    if (tab === "members") {
+    // Skip the initial render: useApi already fetched on mount.
+    const changed = previousTab.current !== null && previousTab.current !== tab;
+    previousTab.current = tab;
+    if (!changed) return;
+
+    // Refresh the data that the selected tab displays, so switching tabs
+    // always shows the latest server state.
+    if (tab === "connection") {
+      group.refresh();
+      periods.refresh();
+      summary.refresh();
+    } else if (tab === "members") {
       members.refresh();
       invites.refresh();
+      group.refresh();
+    } else if (tab === "mapping") {
+      accounts.refresh();
+      members.refresh();
+      summary.refresh();
+    } else if (tab === "billing") {
+      periods.refresh();
+      summary.refresh();
+      accounts.refresh();
+      group.refresh();
+    } else if (tab === "audit") {
+      audit.refresh();
+    } else if (tab === "settings") {
+      group.refresh();
+      members.refresh();
     }
-    if (tab === "mapping") accounts.refresh();
-  }, [tab, audit.refresh, members.refresh, invites.refresh, accounts.refresh]);
+  }, [
+    tab,
+    group.refresh,
+    periods.refresh,
+    summary.refresh,
+    members.refresh,
+    invites.refresh,
+    accounts.refresh,
+    audit.refresh,
+  ]);
 
   if (group.loading && !group.data) {
     return (
@@ -335,17 +369,14 @@ function ConnectionTab({
   const [syncing, setSyncing] = useState(false);
   const [disconnectOpen, setDisconnectOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   const saveKey = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
-    setMessage(null);
     setSaving(true);
     try {
       await put(`/api/groups/${groupId}/console`, { key });
       setKey("");
-      setMessage("Console key verified and saved. An initial sync has started.");
       notifySuccess("Console key verified and saved.");
       onChanged();
     } catch (err) {
@@ -358,11 +389,9 @@ function ConnectionTab({
 
   const sync = async () => {
     setError(null);
-    setMessage(null);
     setSyncing(true);
     try {
       const result = await post<{ rows: number }>(`/api/groups/${groupId}/sync`);
-      setMessage(`Sync finished: ${result.rows} usage rows processed.`);
       notifySuccess(`Sync finished: ${result.rows} usage rows processed.`);
       onChanged();
     } catch (err) {
@@ -376,10 +405,8 @@ function ConnectionTab({
   const disconnect = async () => {
     setDisconnectOpen(false);
     setError(null);
-    setMessage(null);
     try {
       await del(`/api/groups/${groupId}/console`);
-      setMessage("Console connection removed.");
       notifySuccess("Console connection removed.");
       onChanged();
     } catch (err) {
@@ -417,11 +444,6 @@ function ConnectionTab({
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {message && (
-            <Alert variant="info">
-              <AlertDescription>{message}</AlertDescription>
             </Alert>
           )}
           <div className="space-y-2 rounded-lg border p-3 text-sm">
@@ -536,7 +558,6 @@ function SettingsTab({
   const [deleting, setDeleting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setGroupName(name);
@@ -545,10 +566,8 @@ function SettingsTab({
   const rename = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
-    setMessage(null);
     const next = groupName.trim();
     if (next === name) {
-      setMessage("The group name is unchanged.");
       notifyInfo("The group name is unchanged.");
       return;
     }
@@ -556,7 +575,6 @@ function SettingsTab({
     try {
       await patch(`/api/groups/${groupId}`, { name: next });
       onChanged();
-      setMessage("Group renamed.");
       notifySuccess("Group renamed.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not rename the group.");
@@ -568,7 +586,6 @@ function SettingsTab({
 
   const remove = async () => {
     setError(null);
-    setMessage(null);
     if (confirmName.trim() !== name) {
       setError(`Type "${name}" exactly to confirm deletion.`);
       return;
@@ -591,11 +608,6 @@ function SettingsTab({
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      {message && (
-        <Alert variant="info">
-          <AlertDescription>{message}</AlertDescription>
         </Alert>
       )}
 
@@ -1131,7 +1143,6 @@ function MappingTab({
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const next: Record<string, string> = {};
@@ -1250,7 +1261,6 @@ function MappingTab({
   const save = async (accountId: string) => {
     const userId = selection[accountId];
     setError(null);
-    setMessage(null);
     if (!userId) {
       setError("Choose a member first.");
       notifyError(null, "Choose a member first.");
@@ -1259,7 +1269,6 @@ function MappingTab({
     setSavingId(accountId);
     try {
       await put(`/api/groups/${groupId}/mappings/${accountId}`, { userId });
-      setMessage("Mapping saved.");
       notifySuccess("Mapping saved.");
       accounts.refresh();
       onChanged();
@@ -1273,10 +1282,8 @@ function MappingTab({
 
   const unmap = async (accountId: string) => {
     setError(null);
-    setMessage(null);
     try {
       await del(`/api/groups/${groupId}/mappings/${accountId}`);
-      setMessage("Mapping removed.");
       notifySuccess("Mapping removed.");
       accounts.refresh();
       onChanged();
@@ -1301,11 +1308,6 @@ function MappingTab({
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        {message && (
-          <Alert variant="info">
-            <AlertDescription>{message}</AlertDescription>
           </Alert>
         )}
         {accounts.loading ? (
@@ -1346,7 +1348,6 @@ function BillingTab({
   const [reopening, setReopening] = useState(false);
   const [reopenOpen, setReopenOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   const period = useMemo(
     () => periods.find((entry) => entry.id === selectedPeriod) ?? null,
@@ -1382,11 +1383,9 @@ function BillingTab({
       return;
     }
     setError(null);
-    setMessage(null);
     setSaving(true);
     try {
       await put(`/api/groups/${groupId}/periods/${period.id}/bill`, { totalIdr: value });
-      setMessage("Total bill saved.");
       notifySuccess("Total bill saved.");
       summary.refresh();
       onChanged();
@@ -1401,11 +1400,9 @@ function BillingTab({
   const finalize = async () => {
     if (!period) return;
     setError(null);
-    setMessage(null);
     setFinalizing(true);
     try {
       await post(`/api/groups/${groupId}/periods/${period.id}/finalize`);
-      setMessage("Period finalized. Amounts are now locked.");
       notifySuccess("Period finalized. Amounts are now locked.");
       summary.refresh();
       onChanged();
@@ -1421,7 +1418,6 @@ function BillingTab({
     if (!period) return;
     setReopenOpen(false);
     setError(null);
-    setMessage(null);
     setReopening(true);
     try {
       const result = await post<{ sync?: { rows?: number; error?: string } }>(
@@ -1429,15 +1425,10 @@ function BillingTab({
       );
       if (result.sync?.error) {
         const detail = result.sync.error.replace(/\.$/, "");
-        const text = `Period reopened, but the usage re-sync failed: ${detail}. Use Sync now to retry.`;
-        setMessage(text);
-        notifyInfo(text);
+        notifyInfo(`Period reopened, but the usage re-sync failed: ${detail}. Use Sync now to retry.`);
       } else if (typeof result.sync?.rows === "number") {
-        const text = `Period reopened. Re-synced ${result.sync.rows} usage rows from the last 90 days.`;
-        setMessage(text);
-        notifySuccess(text);
+        notifySuccess(`Period reopened. Re-synced ${result.sync.rows} usage rows from the last 90 days.`);
       } else {
-        setMessage("Period reopened.");
         notifySuccess("Period reopened.");
       }
       summary.refresh();
@@ -1503,11 +1494,6 @@ function BillingTab({
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {message && (
-            <Alert variant="info">
-              <AlertDescription>{message}</AlertDescription>
             </Alert>
           )}
           <div className="space-y-1.5">
