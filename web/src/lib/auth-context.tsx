@@ -24,7 +24,7 @@ interface AuthContextValue {
   config: PublicConfig | null;
   loading: boolean;
   setupRequired: boolean;
-  login: (email: string, password: string) => Promise<CurrentUser>;
+  login: (email: string, password: string, turnstileToken?: string) => Promise<CurrentUser>;
   signup: (input: {
     name: string;
     email: string;
@@ -77,8 +77,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [load]);
 
   const login = useCallback(
-    async (email: string, password: string) => {
-      const result = await post<{ user: CurrentUser }>("/api/auth/login", { email, password });
+    async (email: string, password: string, turnstileToken?: string) => {
+      const result = await post<{ user: CurrentUser }>("/api/auth/login", {
+        email,
+        password,
+        turnstileToken,
+      });
       setUser(result.user);
       return result.user;
     },

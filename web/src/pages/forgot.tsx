@@ -1,17 +1,22 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Loader2, Mail } from "lucide-react";
+import { AlertCircle, Loader2, Mail, Send } from "lucide-react";
 import { AuthLayout } from "@/components/auth-layout";
+import { Turnstile, type TurnstileHandle } from "@/components/turnstile";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { post } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function ForgotPage() {
+  const { config } = useAuth();
   const [email, setEmail] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ message: string; devResetUrl?: string } | null>(null);
@@ -20,12 +25,21 @@ export function ForgotPage() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    if (config?.turnstileSiteKey && !turnstileToken) {
+      setError("Please complete the Turnstile check.");
+      return;
+    }
     setSubmitting(true);
     try {
-      const response = await post<{ message: string; devResetUrl?: string }>("/api/auth/forgot", { email });
+      const response = await post<{ message: string; devResetUrl?: string }>("/api/auth/forgot", {
+        email,
+        turnstileToken,
+      });
       setResult(response);
       notifySuccess("Reset link sent.");
     } catch (err) {
+      turnstileRef.current?.reset();
+      setTurnstileToken("");
       setError(err instanceof Error ? err.message : "Could not request a reset link.");
       notifyError(err, "Could not request a reset link.");
     } finally {
@@ -67,8 +81,9 @@ export function ForgotPage() {
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
+          <Turnstile ref={turnstileRef} siteKey={config?.turnstileSiteKey ?? ""} onToken={setTurnstileToken} />
           <Button className="w-full" type="submit" disabled={submitting}>
-            {submitting && <Loader2 className="animate-spin" />}
+            {submitting ? <Loader2 className="animate-spin" /> : <Send />}
             Send reset link
           </Button>
         </form>

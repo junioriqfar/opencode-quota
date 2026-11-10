@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
 declare global {
   interface Window {
@@ -13,8 +13,13 @@ declare global {
         },
       ) => string;
       remove: (widgetId: string) => void;
+      reset: (widgetId: string) => void;
     };
   }
+}
+
+export interface TurnstileHandle {
+  reset: () => void;
 }
 
 let scriptPromise: Promise<void> | null = null;
@@ -35,17 +40,23 @@ function loadScript(): Promise<void> {
   return scriptPromise;
 }
 
-export function Turnstile({
-  siteKey,
-  onToken,
-}: {
+export const Turnstile = forwardRef<TurnstileHandle, {
   siteKey: string;
   onToken: (token: string) => void;
-}) {
+}>(function Turnstile({ siteKey, onToken }, ref) {
   const container = useRef<HTMLDivElement>(null);
   const widget = useRef<string | null>(null);
   const callback = useRef(onToken);
   callback.current = onToken;
+
+  useImperativeHandle(ref, () => ({
+    reset() {
+      if (widget.current && window.turnstile) {
+        window.turnstile.reset(widget.current);
+        callback.current("");
+      }
+    },
+  }), []);
 
   useEffect(() => {
     if (!siteKey || !container.current) return;
@@ -70,4 +81,5 @@ export function Turnstile({
 
   if (!siteKey) return null;
   return <div ref={container} className="flex justify-center" />;
-}
+});
+Turnstile.displayName = "Turnstile";

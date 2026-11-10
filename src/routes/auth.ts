@@ -130,10 +130,17 @@ auth.post("/login", async (c) => {
   assertOrigin(c);
   const body = await parseJson(
     c,
-    z.object({ email: emailSchema, password: z.string().min(1).max(128) }),
+    z.object({
+      email: emailSchema,
+      password: z.string().min(1).max(128),
+      turnstileToken: z.string().optional(),
+    }),
   );
   const email = normalizeEmail(body.email);
   rateLimit(`login:${clientIp(c)}:${email}`, 10, 15 * 60_000);
+  if (!(await verifyTurnstile(body.turnstileToken, clientIp(c)))) {
+    throw badRequest("Turnstile verification failed. Please try again.");
+  }
   const row = await sql<
     Array<{
       id: string;
@@ -270,9 +277,15 @@ auth.post("/resend-verification", async (c) => {
 
 auth.post("/forgot", async (c) => {
   assertOrigin(c);
-  const body = await parseJson(c, z.object({ email: emailSchema }));
+  const body = await parseJson(
+    c,
+    z.object({ email: emailSchema, turnstileToken: z.string().optional() }),
+  );
   const email = normalizeEmail(body.email);
   rateLimit(`forgot:${clientIp(c)}:${email}`, 3, 15 * 60_000);
+  if (!(await verifyTurnstile(body.turnstileToken, clientIp(c)))) {
+    throw badRequest("Turnstile verification failed. Please try again.");
+  }
   const user = await findUserByEmail(email);
   if (user && user.status === "active") {
     const token = await createEmailToken(user.id, "reset", 60 * 60_000);

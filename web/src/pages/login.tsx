@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { AlertCircle, Loader2, Mail } from "lucide-react";
+import { AlertCircle, Loader2, LogIn, Mail } from "lucide-react";
 import { AuthLayout } from "@/components/auth-layout";
+import { Turnstile, type TurnstileHandle } from "@/components/turnstile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +14,11 @@ import { notifyError, notifySuccess } from "@/lib/notify";
 import { usePageMeta } from "@/hooks/use-page-meta";
 
 export function LoginPage() {
-  const { user, loading, login, setupRequired } = useAuth();
+  const { user, loading, config, login, setupRequired } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
@@ -56,12 +59,18 @@ export function LoginPage() {
     setError(null);
     setResendMessage(null);
     setDevVerifyUrl(null);
+    if (config?.turnstileSiteKey && !turnstileToken) {
+      setError("Please complete the Turnstile check.");
+      return;
+    }
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(email, password, turnstileToken);
       notifySuccess("Signed in.");
       navigate(next, { replace: true });
     } catch (err) {
+      turnstileRef.current?.reset();
+      setTurnstileToken("");
       setError(err instanceof Error ? err.message : "Sign in failed.");
       notifyError(err, "Sign in failed.");
     } finally {
@@ -129,8 +138,9 @@ export function LoginPage() {
             </Link>
           </div>
         </div>
+        <Turnstile ref={turnstileRef} siteKey={config?.turnstileSiteKey ?? ""} onToken={setTurnstileToken} />
         <Button className="w-full" type="submit" disabled={submitting}>
-          {submitting && <Loader2 className="animate-spin" />}
+          {submitting ? <Loader2 className="animate-spin" /> : <LogIn />}
           Sign in
         </Button>
       </form>

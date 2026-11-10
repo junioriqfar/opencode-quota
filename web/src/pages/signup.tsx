@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, UserPlus } from "lucide-react";
 import { safeNextPath } from "@shared/redirect";
 import { AuthLayout } from "@/components/auth-layout";
-import { Turnstile } from "@/components/turnstile";
+import { Turnstile, type TurnstileHandle } from "@/components/turnstile";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ export function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ email: string; devVerifyUrl?: string; emailSent: boolean } | null>(null);
@@ -58,6 +59,8 @@ export function SignupPage() {
       setSuccess({ email: result.email, devVerifyUrl: result.devVerifyUrl, emailSent: result.emailSent });
       notifySuccess("Account created. Check your email.");
     } catch (err) {
+      turnstileRef.current?.reset();
+      setTurnstileToken("");
       setError(err instanceof Error ? err.message : "Sign up failed.");
       notifyError(err, "Sign up failed.");
     } finally {
@@ -135,9 +138,9 @@ export function SignupPage() {
           </div>
         </div>
         <PasswordStrength value={password} />
-        <Turnstile siteKey={config?.turnstileSiteKey ?? ""} onToken={setTurnstileToken} />
+        <Turnstile ref={turnstileRef} siteKey={config?.turnstileSiteKey ?? ""} onToken={setTurnstileToken} />
         <Button className="w-full" type="submit" disabled={submitting}>
-          {submitting && <Loader2 className="animate-spin" />}
+          {submitting ? <Loader2 className="animate-spin" /> : <UserPlus />}
           Create account
         </Button>
         {!config?.turnstileSiteKey && (
