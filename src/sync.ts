@@ -311,6 +311,19 @@ export async function syncGroup(
 
 let schedulerRunning = false;
 
+/**
+ * Milliseconds until the next wall-clock multiple of the interval, measured
+ * from local midnight (e.g. 10-minute interval → 09:00, 09:10, 09:20).
+ */
+export function msUntilNextInterval(intervalMs: number, now: Date = new Date()): number {
+  const safe = Math.max(1, intervalMs);
+  const sinceMidnight =
+    ((now.getHours() * 60 + now.getMinutes()) * 60 + now.getSeconds()) * 1000 +
+    now.getMilliseconds();
+  const remainder = sinceMidnight % safe;
+  return remainder === 0 ? safe : safe - remainder;
+}
+
 export async function syncAllGroups(): Promise<void> {
   if (schedulerRunning) return;
   schedulerRunning = true;
@@ -329,15 +342,33 @@ export async function syncAllGroups(): Promise<void> {
 }
 
 export function startSyncScheduler(): () => void {
-  const timer = setTimeout(() => {
-    void syncAllGroups().catch((error) => console.error("[sync] initial run failed:", error));
+  const intervalMs = Math.max(60_000, config.syncIntervalMs);
+  let stopped = false;
+  let nextTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const run = (label: "initial" | "scheduled") => {
+    void syncAllGroups().catch((error) => console.error(`[sync] ${label} run failed:`, error));
+  };
+
+  // Keep a fresh sync shortly after boot, then align every following run to
+  // the next wall-clock multiple of the interval (09:00, 09:10, 09:20, …).
+  const scheduleNext = () => {
+    if (stopped) return;
+    nextTimer = setTimeout(() => {
+      run("scheduled");
+      scheduleNext();
+    }, msUntilNextInterval(intervalMs));
+  };
+
+  const initialTimer = setTimeout(() => {
+    run("initial");
+    scheduleNext();
   }, 5_000);
-  const interval = setInterval(() => {
-    void syncAllGroups().catch((error) => console.error("[sync] scheduled run failed:", error));
-  }, config.syncIntervalMs);
+
   return () => {
-    clearTimeout(timer);
-    clearInterval(interval);
+    stopped = true;
+    clearTimeout(initialTimer);
+    if (nextTimer) clearTimeout(nextTimer);
   };
 }
 
