@@ -19,6 +19,7 @@ import {
   requireAuth,
   SetupUnavailableError,
   verifyPassword,
+  verifyUnknownUserPassword,
   type AppEnv,
   type AuthContext,
 } from "../auth.ts";
@@ -104,13 +105,24 @@ auth.post("/signup", async (c) => {
     throw badRequest("Turnstile verification failed. Please try again.");
   }
   const email = normalizeEmail(body.email);
+  const passwordHash = await hashPassword(body.password);
   const existing = await findUserByEmail(email);
-  if (existing) throw conflict("An account with this email already exists.");
+  if (existing) {
+    return c.json(
+      {
+        ok: true,
+        email,
+        message: "If this address can be used, check your inbox to continue.",
+        emailSent: false,
+      },
+      201,
+    );
+  }
 
   const userId = newId();
   await sql`
     insert into users(id, email, name, password_hash)
-    values (${userId}, ${email}, ${body.name.trim()}, ${await hashPassword(body.password)})
+    values (${userId}, ${email}, ${body.name.trim()}, ${passwordHash})
   `;
   const token = await createEmailToken(userId, "verify", 24 * 60 * 60_000);
   const sent = await sendVerificationEmail(email, token, body.next);
@@ -129,6 +141,8 @@ auth.post("/signup", async (c) => {
 
 auth.post("/login", async (c) => {
   assertOrigin(c);
+  const ip = clientIp(c);
+  rateLimit(`login-ip:${ip}`, 60, 15 * 60_000);
   const body = await parseJson(
     c,
     z.object({
@@ -138,8 +152,8 @@ auth.post("/login", async (c) => {
     }),
   );
   const email = normalizeEmail(body.email);
-  rateLimit(`login:${clientIp(c)}:${email}`, 10, 15 * 60_000);
-  if (!(await verifyTurnstile(body.turnstileToken, clientIp(c)))) {
+  rateLimit(`login:${ip}:${email}`, 10, 15 * 60_000);
+  if (!(await verifyTurnstile(body.turnstileToken, ip))) {
     throw badRequest("Turnstile verification failed. Please try again.");
   }
   const row = await sql<
@@ -154,7 +168,11 @@ auth.post("/login", async (c) => {
     }>
   >`select * from users where lower(email) = ${email} limit 1`;
   const user = row[0];
-  if (!user || !(await verifyPassword(body.password, user.password_hash))) {
+  if (!user) {
+    await verifyUnknownUserPassword(body.password);
+    throw unauthorized("Invalid email or password.");
+  }
+  if (!(await verifyPassword(body.password, user.password_hash))) {
     throw unauthorized("Invalid email or password.");
   }
   if (user.status !== "active") throw forbidden("This account is disabled.");
@@ -260,9 +278,11 @@ auth.get("/verify", async (c) => {
 
 auth.post("/resend-verification", async (c) => {
   assertOrigin(c);
+  const ip = clientIp(c);
+  rateLimit(`resend-ip:${ip}`, 20, 15 * 60_000);
   const body = await parseJson(c, z.object({ email: emailSchema, next: z.string().max(2048).optional() }));
   const email = normalizeEmail(body.email);
-  rateLimit(`resend:${clientIp(c)}:${email}`, 3, 15 * 60_000);
+  rateLimit(`resend:${ip}:${email}`, 3, 15 * 60_000);
   const user = await findUserByEmail(email);
   if (user && !user.emailVerifiedAt) {
     const token = await createEmailToken(user.id, "verify", 24 * 60 * 60_000);
@@ -278,23 +298,30 @@ auth.post("/resend-verification", async (c) => {
 
 auth.post("/forgot", async (c) => {
   assertOrigin(c);
+  const ip = clientIp(c);
+  rateLimit(`forgot-ip:${ip}`, 30, 15 * 60_000);
   const body = await parseJson(
     c,
     z.object({ email: emailSchema, turnstileToken: z.string().optional() }),
   );
   const email = normalizeEmail(body.email);
-  rateLimit(`forgot:${clientIp(c)}:${email}`, 3, 15 * 60_000);
-  if (!(await verifyTurnstile(body.turnstileToken, clientIp(c)))) {
+  rateLimit(`forgot:${ip}:${email}`, 3, 15 * 60_000);
+  if (!(await verifyTurnstile(body.turnstileToken, ip))) {
     throw badRequest("Turnstile verification failed. Please try again.");
   }
   const user = await findUserByEmail(email);
   if (user && user.status === "active") {
     const token = await createEmailToken(user.id, "reset", 60 * 60_000);
-    const sent = await sendPasswordResetEmail(email, token);
-    return c.json({
-      ok: true,
-      message: "If the account exists, a password reset email has been sent.",
-      devResetUrl: config.devExposeEmailLinks ? sent.link : undefined,
+    if (config.devExposeEmailLinks) {
+      const sent = await sendPasswordResetEmail(email, token);
+      return c.json({
+        ok: true,
+        message: "If the account exists, a password reset email has been sent.",
+        devResetUrl: sent.link,
+      });
+    }
+    void sendPasswordResetEmail(email, token).catch((error) => {
+      console.error("[email] password reset send failed:", error);
     });
   }
   return c.json({
@@ -305,12 +332,12 @@ auth.post("/forgot", async (c) => {
 
 auth.post("/reset", async (c) => {
   assertOrigin(c);
+  rateLimit(`reset:${clientIp(c)}`, 10, 15 * 60_000);
   const body = await parseJson(
     c,
     z.object({ token: z.string().min(10), password: passwordSchema }),
   );
   assertStrongPassword(body.password);
-  rateLimit(`reset:${clientIp(c)}`, 10, 15 * 60_000);
   const consumed = await consumeEmailToken(body.token, "reset");
   if (!consumed) throw badRequest("This reset link is invalid or expired.");
   await sql`

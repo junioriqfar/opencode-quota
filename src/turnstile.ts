@@ -6,9 +6,15 @@ export async function verifyTurnstile(token: string | undefined, ip: string): Pr
   if (!config.turnstileSecretKey) {
     if (!warned) {
       warned = true;
-      console.warn("[turnstile] TURNSTILE_SECRET_KEY is empty; Turnstile is disabled in dev mode.");
+      console.warn(
+        `[turnstile] TURNSTILE_SECRET_KEY is empty; ${
+          config.isProduction
+            ? "verification will fail in production."
+            : "Turnstile is disabled in development."
+        }`,
+      );
     }
-    return true;
+    return !config.isProduction;
   }
   if (!token) return false;
   try {

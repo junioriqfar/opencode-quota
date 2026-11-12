@@ -69,6 +69,15 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   }
 }
 
+// Argon2id hash of a fixed dummy value. Used to equalize login timing for
+// unknown emails, so attackers cannot enumerate accounts by response time.
+const DUMMY_PASSWORD_HASH =
+  "$argon2id$v=19$m=65536,t=2,p=1$bkbO8WX3RX2ubv+iJow6LUIwVAMFHTzZLiR+ZYBjs2Q$TZLAFjt/2cCWvPKKkoy1iCIaVr04vR5TmhtBrW8dmKs";
+
+export async function verifyUnknownUserPassword(password: string): Promise<void> {
+  await verifyPassword(password, DUMMY_PASSWORD_HASH);
+}
+
 export async function createSession(
   userId: string,
   c: Context,

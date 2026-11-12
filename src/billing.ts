@@ -641,6 +641,9 @@ export async function buildGroupSummary(
   const totals = totalsFromMembers(members);
   const blockers: string[] = [];
   if (!isOwner) blockers.push("Only the group owner can finalize this period.");
+  if (new Date(period.end_at).getTime() > Date.now()) {
+    blockers.push("This period is still active. Finalization is available after it ends.");
+  }
   if (period.total_idr === null) blockers.push("Enter the total bill in IDR.");
   if (ctx.totalCost === 0) blockers.push("There is no usage in this period.");
   if (unmapped.length > 0) {
@@ -1121,6 +1124,9 @@ export async function finalizePeriod(
     const period = periods[0];
     if (!period) throw notFound("Period not found.");
     if (period.status !== "draft") throw conflict("This period is already finalized.");
+    if (new Date(period.end_at).getTime() > Date.now()) {
+      throw badRequest("This period is still active. Wait until it ends before finalizing.");
+    }
     if (period.total_idr === null) throw badRequest("Enter the total bill in IDR before finalizing.");
 
     const [accountUsage, members, meter] = await Promise.all([

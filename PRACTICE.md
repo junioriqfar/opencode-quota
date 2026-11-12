@@ -130,6 +130,7 @@ In dev, the verification link is shown on the signup screen.
 Before finalizing, the app checks:
 
 - owner access,
+- the period has ended,
 - total IDR is set,
 - there is usage,
 - every service account with usage is mapped.
@@ -201,4 +202,4 @@ To view the previous demo instead:
 - The key is never returned to the browser.
 - All groups are private; members can see all members and usage inside their group only.
 - The current Go cycle is **15 Oct 2026 – 15 Nov 2026**.
-- Do not finalize a real period before the cycle ends.
+- Finalization is blocked until the cycle ends.

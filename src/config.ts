@@ -44,10 +44,19 @@ function intEnv(name: string, fallback: number): number {
 }
 
 const root = process.cwd();
-const nodeEnv = process.env.NODE_ENV ?? "development";
+const nodeEnv = process.env.NODE_ENV ?? "production";
 const isProduction = nodeEnv === "production";
-const appUrl = process.env.APP_URL ?? `http://127.0.0.1:${intEnv("PORT", 8788)}`;
+const appUrl = (process.env.APP_URL ?? `http://127.0.0.1:${intEnv("PORT", 8788)}`).replace(
+  /\/+$/,
+  "",
+);
 const port = intEnv("PORT", 8788);
+const localOrigins = [
+  "http://127.0.0.1:5174",
+  "http://localhost:5174",
+  `http://127.0.0.1:${port}`,
+  `http://localhost:${port}`,
+];
 
 export const config = {
   root,
@@ -75,13 +84,7 @@ export const config = {
   consoleBase: "https://opencode.ai/console/api",
   sessionCookie: "qs_session",
   sessionMaxAgeSeconds: 30 * 24 * 60 * 60,
-  allowedOrigins: [
-    appUrl,
-    "http://127.0.0.1:5174",
-    "http://localhost:5174",
-    `http://127.0.0.1:${port}`,
-    `http://localhost:${port}`,
-  ],
+  allowedOrigins: isProduction ? [appUrl] : [appUrl, ...localOrigins],
   maxGroupsDefault: 3,
 };
 

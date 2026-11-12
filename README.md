@@ -176,7 +176,7 @@ If Resend is not configured, the app logs email content and (in development) ret
 2. Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`.
 3. Set `APP_URL` to the exact public HTTPS URL.
 
-If Turnstile is not configured, the server bypasses verification in development. Configure both keys before production.
+In development, an empty secret bypasses verification. In production, both Turnstile keys are required and the server refuses to start without them.
 
 ## Main flows
 
@@ -221,6 +221,7 @@ If Turnstile is not configured, the server bypasses verification in development.
 - The bill is split by **list cost share** using largest remainder.
 - Finalization requires:
   - owner access,
+  - the period to have ended,
   - a total IDR bill,
   - at least one usage row,
   - no unmapped service account with usage.
@@ -228,7 +229,7 @@ If Turnstile is not configured, the server bypasses verification in development.
   - member totals,
   - daily member snapshots,
   - mapping-independent amounts.
-- After finalization, sync ignores new usage for that period. The chart and bill stay frozen.
+- After finalization, sync ignores new usage for that period and does not modify the finalized period window or plan price. The chart and bill stay frozen.
 - The owner can reopen a finalized period. Reopening deletes the snapshot, returns to draft, and **re-syncs the last 90 days** so late service-account usage is imported.
 
 ### New service account after finalization
@@ -319,7 +320,10 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 - Sessions: random 32-byte token, SHA-256 hash in DB, HttpOnly/Secure/SameSite cookie.
 - CSRF: per-session token + Origin check.
 - Email tokens: one-time, hashed in DB, short expiry.
-- Rate limits: login, signup, reset, invite, sync, setup.
+- Rate limits: login, signup, reset, invite, sync, setup. Login, signup, forgot, and reset have per-IP budgets before body parsing; body size is capped at 1 MB.
+- Account enumeration: unknown-email logins run a dummy Argon2 verification, and signup returns a generic response for existing addresses.
+- Finalization: only after the period ends; finalized rows are never mutated by later syncs.
+- Turnstile: required in production (server refuses to start without both keys); only bypassed in development.
 - Setup guard: only when the `users` table is empty; a table lock serializes concurrent setup requests.
 - Setup token: static from `SETUP_TOKEN`; in development an empty value generates one stable token and logs it once. Page access never rotates it.
 - Turnstile server-side verification when configured.
@@ -474,7 +478,7 @@ Keep the `APP_ENCRYPTION_KEY` separately. Without it, encrypted Console keys can
 - The previous demo database is `quota_status` and is backed up under `backups/` (git-ignored).
 - Follow `PRACTICE.md` for the full from-scratch flow.
 - Resend and Turnstile are empty; emails are logged and links are exposed in dev.
-- `DEV_EXPOSE_EMAIL_LINKS=true` must be false in production.
+- `DEV_EXPOSE_EMAIL_LINKS=true` is ignored in production; dev links are only returned in development.
 
 ## Tests
 
@@ -490,7 +494,7 @@ bun run build:win
 
 - Usage attribution is per **service account**, not per API key. Use one service account per person.
 - A Console workspace can be connected to only one group. Create a new group for a different workspace.
-- Finalization is owner-only and blocked until all usage accounts are mapped.
+- Finalization is owner-only, available only after the period ends, and blocked until all usage accounts are mapped.
 - Open signup is rate-limited and guarded by email verification/Turnstile; for a small friend group, consider a signup code or approval later.
 - The app does not implement password reset via manual admin action; Resend (or dev logs) is required.
 - Notifications are shown in-app as dashboard warnings and admin status; no email/WhatsApp delivery is implemented.

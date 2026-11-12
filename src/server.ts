@@ -17,6 +17,12 @@ if (await isSetupAvailable()) {
   logGeneratedSetupToken();
 }
 
+if (config.isProduction && (!config.turnstileSiteKey || !config.turnstileSecretKey)) {
+  throw new Error(
+    "Turnstile is required in production. Set TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY.",
+  );
+}
+
 const app = new Hono();
 
 app.use("*", async (c, next) => {
@@ -118,6 +124,7 @@ const server = Bun.serve({
   port: config.port,
   fetch: app.fetch,
   idleTimeout: 60,
+  maxRequestBodySize: 1_000_000,
 });
 
 const stopScheduler = startSyncScheduler();

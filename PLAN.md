@@ -218,6 +218,7 @@ Super-admin:
 - Windows build: `dist/quota.exe` (server) + `dist/quota-cli.exe` (admin), PE32+ x86-64.
 - Browser verification: login, account menu/change password, group list, dashboard, admin connection/members/mapping/billing/audit, super-admin, Turnstile flows.
 - Security hardening: password policy di setup/reset/CLI, escape HTML email undangan, sanitasi redirect login, dev email links dipaksa off di production.
+- Hardening lanjutan: production wajib Turnstile, origin dev hanya di development, finalisasi hanya setelah periode berakhir, finalized period tidak dimutasi sync, dummy Argon2 untuk login email tak dikenal, rate limit per-IP sebelum parsing body, batas body 1 MB.
 - UI: account menu, change password, password strength, Turnstile login/reset, responsive layout, scheduled sync.
 - README + deploy Windows + Cloudflared + backup script tersedia.
 

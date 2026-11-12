@@ -66,6 +66,7 @@ export async function ensurePeriod(
     select * from periods where group_id = ${groupId} and start_at = ${startAt} limit 1
   `;
   if (existing[0]) {
+    if (existing[0].status === "finalized") return existing[0];
     await sql`
       update periods
       set end_at = ${endAt}, start_date = ${startDate}, end_date = ${endDate},

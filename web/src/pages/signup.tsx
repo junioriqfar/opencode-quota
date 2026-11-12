@@ -24,7 +24,12 @@ export function SignupPage() {
   const turnstileRef = useRef<TurnstileHandle>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ email: string; devVerifyUrl?: string; emailSent: boolean } | null>(null);
+  const [success, setSuccess] = useState<{
+    email: string;
+    message: string;
+    devVerifyUrl?: string;
+    emailSent: boolean;
+  } | null>(null);
   const [search] = useSearchParams();
   const next = safeNextPath(search.get("next"));
   const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
@@ -56,8 +61,13 @@ export function SignupPage() {
     setSubmitting(true);
     try {
       const result = await signup({ name, email, password, turnstileToken, next });
-      setSuccess({ email: result.email, devVerifyUrl: result.devVerifyUrl, emailSent: result.emailSent });
-      notifySuccess("Account created. Check your email.");
+      setSuccess({
+        email: result.email,
+        message: result.message,
+        devVerifyUrl: result.devVerifyUrl,
+        emailSent: result.emailSent,
+      });
+      notifySuccess(result.message);
     } catch (err) {
       turnstileRef.current?.reset();
       setTurnstileToken("");
@@ -72,15 +82,16 @@ export function SignupPage() {
     return (
       <AuthLayout
         title="Check your email"
-        subtitle="Verify your address to activate your account."
+        subtitle="If this address can be used, we have sent the next steps."
         footer={<Link className="font-medium text-foreground underline-offset-4 hover:underline" to={loginHref}>Back to sign in</Link>}
       >
         <div className="space-y-4">
           <Alert variant="info">
             <CheckCircle2 className="h-4 w-4" />
-            <AlertTitle>Verification email sent</AlertTitle>
+            <AlertTitle>Check your email</AlertTitle>
             <AlertDescription>
-              We sent a verification link to <strong className="break-all">{success.email}</strong>.
+              <p>{success.message}</p>
+              <p className="mt-1 break-all text-muted-foreground">{success.email}</p>
               {success.devVerifyUrl && (
                 <p className="mt-2">
                   Development mode:{" "}
@@ -88,9 +99,6 @@ export function SignupPage() {
                     open verification link
                   </a>
                 </p>
-              )}
-              {!success.emailSent && !success.devVerifyUrl && (
-                <p className="mt-2">Email delivery is not configured. Ask the administrator for the link.</p>
               )}
             </AlertDescription>
           </Alert>
