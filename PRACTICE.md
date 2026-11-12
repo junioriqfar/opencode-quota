@@ -151,7 +151,7 @@ If a new service account appears after finalization:
 
 To see the blocker:
 
-1. Remove the imported member's mapping.
+1. Remove the imported member's mapping. Removing a member also revokes their pending email invite.
 2. Open Billing.
 3. Finalization is blocked with the unmapped account list.
 4. Map it again.

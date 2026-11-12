@@ -4,6 +4,7 @@ import { config } from "./config.ts";
 import { initSchema, sql } from "./db.ts";
 import { APP_NAME } from "../shared/brand.ts";
 import { isSetupAvailable } from "./auth.ts";
+import { logError } from "./log.ts";
 import { logGeneratedSetupToken } from "./setup-token.ts";
 import { HttpError } from "./errors.ts";
 import { startSyncScheduler } from "./sync.ts";
@@ -13,6 +14,8 @@ import inviteRoutes from "./routes/invites.ts";
 import adminRoutes from "./routes/admin.ts";
 
 await initSchema();
+await sql`delete from sessions where expires_at < now() - interval '7 days'`;
+await sql`delete from email_tokens where expires_at < now() - interval '7 days'`;
 if (await isSetupAvailable()) {
   logGeneratedSetupToken();
 }
@@ -118,7 +121,7 @@ app.onError((error, c) => {
       error.status as never,
     );
   }
-  console.error("[server] error:", error);
+  logError("[server] error", error);
   if (c.req.path.startsWith("/api/")) {
     return c.json({ error: "internal_error", message: "Internal server error." }, 500);
   }

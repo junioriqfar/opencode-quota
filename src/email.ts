@@ -41,6 +41,12 @@ function sanitizeHeaderValue(value: string): string {
   return value.replace(/[\u0000-\u001f\u007f]+/g, " ").trim();
 }
 
+function maskEmail(address: string): string {
+  const [local, domain] = address.split("@");
+  if (!domain) return "***";
+  return `${local.slice(0, 2)}***@${domain}`;
+}
+
 export async function sendEmail(
   input: SendEmailInput,
   options: SendEmailOptions = {},
@@ -50,8 +56,7 @@ export async function sendEmail(
       warned = true;
       console.warn("[email] RESEND_API_KEY is empty; emails will be logged to the console.");
     }
-    console.log(`[email] to=${input.to} subject=${input.subject}`);
-    console.log(`[email] ${input.text}`);
+    console.log(`[email] to=${maskEmail(input.to)} subject=${sanitizeHeaderValue(input.subject)}`);
     return { sent: false };
   }
 
@@ -79,13 +84,15 @@ export async function sendEmail(
       if (response.ok) {
         const body = (await response.json().catch(() => ({}))) as { id?: string };
         console.log(
-          `[email] sent to=${input.to} subject=${input.subject}${body.id ? ` id=${body.id}` : ""}`,
+          `[email] sent to=${maskEmail(input.to)} subject=${sanitizeHeaderValue(input.subject)}${body.id ? ` id=${body.id}` : ""}`,
         );
         return { sent: true };
       }
       const body = await response.text();
       console.error(
-        `[email] Resend failed (${response.status}, attempt ${attempt}/${attempts}): ${body.slice(0, 300)}`,
+        `[email] Resend failed (${response.status}, attempt ${attempt}/${attempts})${
+          config.isProduction ? "" : `: ${body.slice(0, 300)}`
+        }`,
       );
       lastError = `Email provider error (${response.status}).`;
       // Retry only rate limits and provider-side failures.

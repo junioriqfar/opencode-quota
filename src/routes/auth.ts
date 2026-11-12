@@ -29,6 +29,7 @@ import { audit, newId, sql } from "../db.ts";
 import { sendPasswordChangedEmail, sendPasswordResetEmail, sendVerificationEmail } from "../email.ts";
 import { badRequest, conflict, forbidden, unauthorized } from "../errors.ts";
 import { clientIp, parseJson, rateLimit } from "../http.ts";
+import { logError } from "../log.ts";
 import { verifyTurnstile } from "../turnstile.ts";
 import { getAppSettings } from "../billing.ts";
 import { APP_NAME } from "../../shared/brand.ts";
@@ -320,7 +321,7 @@ auth.post("/forgot", async (c) => {
       });
     }
     void sendPasswordResetEmail(email, token).catch((error) => {
-      console.error("[email] password reset send failed:", error);
+      logError("[email] password reset send failed", error);
     });
   }
   return c.json({

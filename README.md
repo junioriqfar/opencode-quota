@@ -317,6 +317,7 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 - Development email-link disclosure is forced off when `NODE_ENV=production`.
 - Invitation emails HTML-escape user-supplied group names and strip control characters from subjects.
 - Password change and reset invalidate outstanding reset/verify tokens and sign out other sessions.
+- CLI `setup` supports `--password-stdin` or `OPENCODE_QUOTA_PASSWORD` to keep passwords out of shell history.
 - Email verification does not create a session; users sign in after verifying.
 - Sessions: random 32-byte token, SHA-256 hash in DB, HttpOnly/Secure/SameSite cookie.
 - CSRF: per-session token + Origin check.
@@ -330,7 +331,11 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 - Turnstile server-side verification when configured; required in production.
 - Production sessions use the `__Host-qs_session` cookie, HSTS, and `Cache-Control: no-store` on API responses.
 - Dependency audit is clean after upgrading React Router, Vite, and Zod.
-- Console keys: AES-256-GCM with per-record nonce and `group_id` AAD; never returned to the browser.
+- Windows backup script verifies `pg_dump` before pruning and tightens backup-directory ACLs.
+- Console keys: AES-256-GCM with per-record nonce and `group_id` AAD; never returned to the browser. Ambiguous key matches are rejected.
+- Disabled groups are excluded from scheduled syncs.
+- Invitations: pending duplicates are rejected, and pending invites are revoked when a member is removed or leaves.
+- Logs: recipients are masked, email bodies/tokens are not logged, and production error logs omit full error objects.
 - Tenant isolation: every group query is scoped by `group_id` and membership checks.
 - Super-admin cannot decrypt keys.
 - Audit log for group, key, invite, mapping, billing, and admin actions.

@@ -1,5 +1,8 @@
 # Run as Administrator in PowerShell.
 # Edit $AppDir if the app is not in C:\opencode-quota.
+# SECURITY: SYSTEM has full machine privileges. For a hardened deployment,
+# create a dedicated low-privilege service account and change -User below;
+# grant it read/write only to $AppDir and the backup directory.
 $AppDir = "C:\opencode-quota"
 $TaskName = "OpenCode Quota"
 

@@ -2,6 +2,7 @@ import { config } from "./config.ts";
 import { decryptSecret } from "./crypto.ts";
 import { audit, newId, sql, toIso } from "./db.ts";
 import { HttpError } from "./errors.ts";
+import { logError } from "./log.ts";
 import {
   getGoStatus,
   getServiceAccounts,
@@ -333,7 +334,10 @@ export async function syncAllGroups(): Promise<void> {
   schedulerRunning = true;
   try {
     const rows = await sql<Array<{ group_id: string }>>`
-      select group_id from console_connections where status = 'valid'
+      select cc.group_id
+      from console_connections cc
+      join groups g on g.id = cc.group_id
+      where cc.status = 'valid' and g.status = 'active'
     `;
     const groups = rows.map((row) => row.group_id);
     for (let i = 0; i < groups.length; i += 2) {
@@ -351,7 +355,7 @@ export function startSyncScheduler(): () => void {
   let nextTimer: ReturnType<typeof setTimeout> | null = null;
 
   const run = (label: "initial" | "scheduled") => {
-    void syncAllGroups().catch((error) => console.error(`[sync] ${label} run failed:`, error));
+    void syncAllGroups().catch((error) => logError(`[sync] ${label} run failed`, error));
   };
 
   // Keep a fresh sync shortly after boot, then align every following run to

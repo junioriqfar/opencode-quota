@@ -136,7 +136,7 @@ export async function readSession(c: Context): Promise<AuthContext | null> {
   `;
   const row = rows[0];
   if (!row) return null;
-  void sql`update sessions set last_seen_at = now() where id = ${row.session_id}`;
+  void sql`update sessions set last_seen_at = now() where id = ${row.session_id}`.catch(() => {});
   return {
     user: mapUser({
       id: row.user_id,

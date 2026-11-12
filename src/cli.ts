@@ -242,10 +242,16 @@ async function main(): Promise<void> {
     switch (command) {
       case "setup": {
         const email = args.get("email");
-        const password = args.get("password");
         const name = args.get("name") ?? "Owner";
+        let password = args.get("password");
+        if (args.has("password-stdin")) {
+          password = (await Bun.stdin.text()).replace(/\r?\n$/, "");
+        }
+        if (!password) password = process.env.OPENCODE_QUOTA_PASSWORD;
         if (!email || !password) {
-          throw new Error("Usage: bun run cli setup --email you@example.com --password '...' --name 'Your Name'");
+          throw new Error(
+            "Usage: bun run cli setup --email you@example.com --password-stdin --name 'Your Name' (or set OPENCODE_QUOTA_PASSWORD)",
+          );
         }
         await setupSuperadmin({ email, password, name });
         break;
@@ -277,7 +283,7 @@ async function main(): Promise<void> {
       case "-h":
         console.log(`${APP_NAME} CLI
 
-  setup --email <email> --password <password> --name "<name>"
+  setup --email <email> --password-stdin --name "<name>"   (or set OPENCODE_QUOTA_PASSWORD)
   seed:dev
   migrate:v1 [--email <owner-email>] [--group "Example Team"]
   sync

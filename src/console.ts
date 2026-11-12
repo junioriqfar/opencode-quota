@@ -242,25 +242,30 @@ export async function validateConsoleKey(key: string): Promise<ValidatedConsoleK
     getServiceAccounts(key),
   ]);
 
-  let matchedAccount: ServiceAccount | null = null;
-  let matchedKey: ServiceAccountKey | null = null;
+  const matches: Array<{ account: ServiceAccount; entry: ServiceAccountKey }> = [];
   for (const account of accounts) {
     for (const entry of account.keys) {
       if (entry.status !== "active") continue;
       if (keyMatchesHint(key, entry.tokenHint)) {
-        matchedAccount = account;
-        matchedKey = entry;
-        break;
+        matches.push({ account, entry });
       }
     }
-    if (matchedAccount) break;
   }
 
-  if (!matchedAccount || !matchedKey) {
+  if (matches.length === 0) {
     throw badRequest(
       "This key is not a service account key in this Console workspace. Create a dedicated read-only service account key and try again.",
     );
   }
+  const matchedAccountIds = new Set(matches.map((match) => match.account.id));
+  if (matchedAccountIds.size > 1) {
+    throw badRequest(
+      "This key matches more than one service account. Create a dedicated key for one service account and try again.",
+    );
+  }
+  const matchedAccount = matches[0]!.account;
+  const matchedKey =
+    matches.find((match) => match.entry.permissions === "read")?.entry ?? matches[0]!.entry;
   if (matchedKey.permissions !== "read") {
     throw badRequest(
       `This key has "${matchedKey.permissions}" permission. Create a service account key with read-only permission.`,

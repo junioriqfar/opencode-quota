@@ -220,7 +220,7 @@ Super-admin:
 - Security hardening: password policy di setup/reset/CLI, escape HTML email undangan, sanitasi redirect login, dev email links dipaksa off di production.
 - Hardening lanjutan: production wajib Turnstile, origin dev hanya di development, finalisasi hanya setelah periode berakhir, finalized period tidak dimutasi sync, dummy Argon2 untuk login email tak dikenal, rate limit per-IP sebelum parsing body, batas body 1 MB, periode dikunci berdasarkan start_date.
 - Hardening L1-L3/M7: token reset/verify dicabut saat ganti/reset password, verifikasi email tidak auto-login, cookie `__Host-`, HSTS, `Cache-Control: no-store` untuk API, React Router/Vite/Zod diperbarui, `bun audit` bersih.
-- Status audit: C1, H1, M1-M7, L1-L3 selesai. Berikutnya L4-L11: key validation heuristic, log redaction, deployment backup, disabled-group sync, CLI secret handling, invite revocation/dedupe.
+- Status audit: C1, H1, M1-M7, L1-L11 selesai. Termasuk: key ambiguity rejection, log redaction, backup verification/ACL, disabled-group sync filter, CLI password via stdin/env, invite revocation/dedupe.
 - UI: account menu, change password, password strength, Turnstile login/reset, responsive layout, scheduled sync.
 - README + deploy Windows + Cloudflared + backup script tersedia.
 

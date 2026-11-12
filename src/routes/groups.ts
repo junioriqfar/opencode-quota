@@ -15,6 +15,7 @@ import { audit, getSetting, newId, sql, toIso } from "../db.ts";
 import { sendInviteEmail } from "../email.ts";
 import { badRequest, conflict, forbidden, notFound } from "../errors.ts";
 import { clientIp, parseJson, rateLimit } from "../http.ts";
+import { logError } from "../log.ts";
 import {
   buildGroupSummary,
   buildHistory,
@@ -187,6 +188,14 @@ groups.delete("/:groupId/members/:userId", async (c) => {
   const removedUser = await sql<{ name: string; email: string }[]>`
     select name, email from users where id = ${userId} limit 1
   `;
+  if (removedUser[0]?.email) {
+    await sql`
+      delete from invites
+      where group_id = ${groupId}
+        and lower(email) = ${removedUser[0].email}
+        and used_at is null
+    `;
+  }
   await audit({
     groupId,
     actorUserId: auth.user.id,
@@ -208,6 +217,10 @@ groups.delete("/:groupId/me", async (c) => {
   await sql`
     update group_members set status = 'removed', removed_at = now()
     where group_id = ${groupId} and user_id = ${auth.user.id}
+  `;
+  await sql`
+    delete from invites
+    where group_id = ${groupId} and lower(email) = ${auth.user.email} and used_at is null
   `;
   await audit({
     groupId,
@@ -246,6 +259,15 @@ groups.post("/:groupId/invites", async (c) => {
       limit 1
     `;
     if (existing[0]) throw conflict("This person is already a member of the group.");
+    const pending = await sql<{ id: string }[]>`
+      select id from invites
+      where group_id = ${groupId}
+        and lower(email) = ${email}
+        and used_at is null
+        and expires_at > now()
+      limit 1
+    `;
+    if (pending[0]) throw conflict("A pending invitation already exists for this email.");
   }
   const group = await sql<{ name: string }[]>`select name from groups where id = ${groupId} limit 1`;
   if (!group[0]) throw notFound("Group not found.");
@@ -333,7 +355,7 @@ groups.put("/:groupId/console", async (c) => {
     where console_org_id = ${validated.orgId} and group_id <> ${groupId}
     limit 1
   `;
-  if (duplicate[0]) throw conflict("This OpenCode workspace is already connected to another group.");
+  if (duplicate[0]) throw conflict("This OpenCode workspace cannot be connected to another group.");
   const encrypted = encryptSecret(body.key, groupId);
   await sql`
     insert into console_connections(
@@ -368,7 +390,7 @@ groups.put("/:groupId/console", async (c) => {
     metadata: { plan: validated.plan, keyHint: validated.keyHint },
   });
   void syncGroup(groupId, { force: true }).catch((error) => {
-    console.error(`[sync] after connect failed for ${groupId}:`, error);
+    logError(`[sync] after connect failed for ${groupId}`, error);
   });
   return c.json({ connection: consoleStatus(await getConnection(groupId)) });
 });
