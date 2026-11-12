@@ -13,8 +13,8 @@
 
 ### Added
 
+- `SECURITY.md`: reporting process, threat model, implemented controls, secrets inventory and rotation, monitoring queries, incident response, and known limitations.
 - Period rollover runbook in `PRACTICE.md` and `scripts/rehearse-rollover.ts`, which rehearses finalization, the missing-sync block, bill freezing, reopen, and the period selector on a `*_rehearsal` database clone.
-
 - Production readiness checklist in `README.md`, covering config, database, host, and the proxy trust boundary.
 - `install-task.ps1` now accepts `-ServiceUser` (prompts for the password) and grants that account Modify on the app directory, so the task no longer has to run as SYSTEM.
 - `test/config.test.ts` covers the production config guardrails.

@@ -227,6 +227,7 @@ Super-admin:
 - Auto-finalisasi sengaja tidak diaktifkan: sync boleh otomatis, tetapi finalisasi tagihan tetap aksi manual owner setelah review.
 - README + deploy Windows + Cloudflared + backup script tersedia.
 - CI GitHub Actions: typecheck, tests, audit, build Windows ZIP, artifact/release; deployment ke PC kantor tetap manual.
+- Dokumentasi keamanan `SECURITY.md` ditambahkan: threat model, rotasi secret, query monitoring sync, prosedur insiden, dan limitasi yang diketahui.
 - Rehearsal rollover: script `scripts/rehearse-rollover.ts` diuji pada clone database; seluruh guard finalisasi, pembekuan tagihan, reopen, dan selector periode lolos. Runbook 15 Nov ada di `PRACTICE.md`.
 - Production readiness: config production fail-fast (DATABASE_URL wajib, APP_URL wajib https), warning RESEND_API_KEY kosong dan HOST non-loopback, installer task mendukung service account low-privilege, backup lewat connection URI, checklist produksi + uji restore di README.
 

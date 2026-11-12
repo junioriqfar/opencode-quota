@@ -318,6 +318,8 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 
 ## Security
 
+See [`SECURITY.md`](SECURITY.md) for the threat model, secrets inventory and rotation, monitoring queries, incident response, and known limitations.
+
 - Passwords: Argon2id via `Bun.password`.
 - Password policy: at least 8 characters with an uppercase letter, a lowercase letter, a number, and a symbol. Enforced on signup, setup, password reset, change-password, and CLI setup.
 - Development email-link disclosure is forced off when `NODE_ENV=production`.
