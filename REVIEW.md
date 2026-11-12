@@ -15,10 +15,11 @@ Never commit `.env` or real account credentials.
 
 ### 1. Auth
 
-- `/login` — sign in.
-- `/signup` — open signup, email verification. In dev, the verification link is shown on screen / logged.
-- `/forgot` and `/reset` — reset password. Dev reset link is shown.
-- `/setup` — only available while no super-admin exists. Production uses `SETUP_TOKEN`.
+- `/login` — sign in, with Turnstile when configured.
+- `/signup` — open signup, email verification, password strength meter. In dev, the verification link is shown on screen / logged.
+- `/forgot` and `/reset` — reset password. Dev reset link is shown; reset enforces the password policy.
+- `/setup` — only available while no super-admin exists. Production uses `SETUP_TOKEN` and enforces the password policy.
+- Account menu — change theme, change password, sign out with confirmation.
 
 ### 2. Groups
 
@@ -114,4 +115,6 @@ Screenshots are kept in `docs/screenshots/` locally, but that folder is **git-ig
 
 Screenshots show the previous demo database. The live app uses the practice database; your own accounts and groups may already exist there.
 
-UI primitives use shadCN UI. Native `<select>`, `<button>`, and `<label>` have been replaced with shadCN Select, Button, and Label. Charts are custom CSS inside shadCN Cards.
+UI primitives use shadCN UI. All tables use the shared DataTable component built on shadCN Table. Charts remain custom CSS inside shadCN Cards.
+
+Security notes: `DEV_EXPOSE_EMAIL_LINKS` is forced off in production, invite emails escape user-supplied group names, login redirects are sanitized, and password policy applies to signup, setup, reset, change-password, and CLI setup.

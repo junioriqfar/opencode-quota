@@ -193,18 +193,18 @@ Super-admin:
 
 - Dev server v2 di `http://127.0.0.1:8788` (v1 tetap di 8787).
 - PostgreSQL dev lokal di port `5432`.
-- Resend/Turnstile kosong → dev mode: link verifikasi muncul di log/response.
+- Resend/Turnstile kosong → dev mode: link verifikasi muncul di log/response. Di production, link dev dipaksa nonaktif.
 - Super-admin dev dibuat lewat CLI `setup` atau `/setup`.
 - Key Console v1 dapat dipakai untuk migrasi.
 
 
 ## 13. Hasil implementasi
 
-- Lokasi: `~/Projects/BunProjects/quota-status-v2` (v1 tetap di `quota-status`).
+- Lokasi: `~/Projects/BunProjects/opencode-quota` (v1 tetap di `quota-status`).
 - Stack: Bun + Hono + PostgreSQL + React/Vite/Tailwind/shadCN.
 - PostgreSQL dev: port `5432`, database `opencode_quota`.
 - Auth: email/password, Argon2id, session cookie, CSRF, verifikasi email, reset password.
-- Resend/Turnstile: dev mode (link email di log/UI, Turnstile opsional); key production disiapkan di `.env`.
+- Resend/Turnstile: dev mode (link email di log/UI); production wajib mengisi key, dan dev email links otomatis nonaktif saat `NODE_ENV=production`.
 - Multi-tenant: user global, group, membership role per group, invite owner-only, group limit dari super-admin.
 - Console key: validasi read-only service account, AES-256-GCM per group, fingerprint, deteksi workspace duplikat.
 - Sync: per group, reader account otomatis dikecualikan, meter snapshot, usage harian.
@@ -214,9 +214,11 @@ Super-admin:
 - Migrasi v1: grup **Example Team**, service account API dipetakan ke owner, anggota kedua diundang dan dipetakan (dev), usage/periode/meter diimpor.
 - Dev group saat ini draft dengan total tagihan kosong; finalisasi sudah diuji lalu di-reopen agar siap diisi tagihan asli.
 - Verifikasi: login, invite accept, mapping, finalization block, finalization, reopen, cross-tenant 403, member cannot access owner/admin endpoints.
-- Tests: 12 pass (money, CSV parser, crypto key encryption).
+- Tests: 19 pass (money, CSV parser, crypto key encryption, redirect, sync schedule).
 - Windows build: `dist/quota.exe` (server) + `dist/quota-cli.exe` (admin), PE32+ x86-64.
-- Browser verification: login, group list, dashboard, admin connection/members/mapping/billing/audit, super-admin.
+- Browser verification: login, account menu/change password, group list, dashboard, admin connection/members/mapping/billing/audit, super-admin, Turnstile flows.
+- Security hardening: password policy di setup/reset/CLI, escape HTML email undangan, sanitasi redirect login, dev email links dipaksa off di production.
+- UI: account menu, change password, password strength, Turnstile login/reset, responsive layout, scheduled sync.
 - README + deploy Windows + Cloudflared + backup script tersedia.
 
 

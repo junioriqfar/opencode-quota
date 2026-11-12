@@ -16,7 +16,7 @@ Do not put real credentials or personal emails in this file.
 - The app uses the practice PostgreSQL database: `opencode_quota`.
 - The database may already contain your accounts and groups from earlier practice.
 - If `/setup` is still required, create the super-admin first. If setup is already complete, sign in with your existing account.
-- Resend/Turnstile are in dev mode: verification/reset links appear in the UI/log.
+- Resend/Turnstile are in dev mode: verification/reset links appear in the UI/log. In production those links are never returned to the browser.
 - The previous demo database `quota_status` is preserved and backed up in `backups/`.
 
 ## Step 1 — Create the super-admin (only if setup is required)
@@ -27,7 +27,7 @@ If `/setup` redirects to `/login`, setup is already complete; skip to Step 3.
 2. Setup token: read `SETUP_TOKEN` from `.env`. In development, if it is empty, the server generates one and prints it once in the server log. Opening `/setup` does **not** rotate the token.
 3. Name: your name.
 4. Email: your own email address.
-5. Choose a strong password.
+5. Choose a strong password: minimal 8 karakter, huruf besar, huruf kecil, angka, dan simbol.
 6. Create the super-admin.
 
 Setup only works while the database has no users.
@@ -155,7 +155,11 @@ To see the blocker:
 3. Finalization is blocked with the unmapped account list.
 4. Map it again.
 
-## Step 9 — Super-admin review
+## Step 9 — Account menu and super-admin review
+
+Use the account menu in the header to switch theme or change your password. Password changes sign out all other sessions.
+
+Then open **Super-admin** review.
 
 Click **Super-admin** in the header.
 
@@ -175,7 +179,7 @@ If you want a completely fresh start again, this deletes the current practice ac
 dropdb -h 127.0.0.1 -p 5432 -U postgres --if-exists opencode_quota
 createdb -h 127.0.0.1 -p 5432 -U postgres opencode_quota
 lsof -ti tcp:8788 | xargs -r kill
-cd ~/Projects/BunProjects/quota-status-v2
+cd ~/Projects/BunProjects/opencode-quota
 nohup bun run start > /tmp/quota-v2-server.log 2>&1 &
 ```
 

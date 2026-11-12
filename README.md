@@ -11,6 +11,8 @@ v1 was a single-workspace dashboard with a public read-only page and admin CLI.
 v2 is a multi-tenant application:
 
 - Users sign up, verify email, and create or join groups.
+- Passwords use a strength policy; users can change their password from the account menu.
+- Turnstile protects login and password reset when configured.
 - The group owner connects a read-only Console key.
 - The owner invites members and maps service accounts to members.
 - Clicking a group without a Console key opens the Connection tab first.
@@ -19,6 +21,7 @@ v2 is a multi-tenant application:
 - Only group members can see the group.
 - The owner sets the total bill in IDR and finalizes the period.
 - Finalization is blocked while any service account with usage is unmapped.
+- Scheduled syncs align to wall-clock boundaries.
 - A super-admin manages tenants, signup policy, and group limits.
 
 ## Stack
