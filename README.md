@@ -512,7 +512,7 @@ bun run build:win
 
 - Usage attribution is per **service account**, not per API key. Use one service account per person.
 - A Console workspace can be connected to only one group. Create a new group for a different workspace.
-- Finalization is owner-only, available only after the period ends, and blocked until all usage accounts are mapped.
+- Finalization is owner-only, available only after the period ends, and blocked until all usage accounts are mapped. It is intentionally manual: the app may auto-sync, but it never auto-finalizes a bill.
 - Open signup is rate-limited and guarded by email verification/Turnstile; for a small friend group, consider a signup code or approval later.
 - The app does not implement password reset via manual admin action; Resend (or dev logs) is required.
 - Notifications are shown in-app as dashboard warnings and admin status; no email/WhatsApp delivery is implemented.

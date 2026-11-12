@@ -224,6 +224,7 @@ Super-admin:
 - UI: account menu, change password, password strength, Turnstile login/reset, responsive layout, scheduled sync.
 - Bug fix: persentase meter bulanan dan quota estimate per-member pada periode finalized sekarang memakai snapshot meter terbaru yang sama dengan used/limit, bukan snapshot finalisasi yang membuat kartu tidak konsisten.
 - Guard finalisasi: wajib sync sukses setelah periode berakhir; periode finalized yang masih aktif diberi warning agar di-reopen.
+- Auto-finalisasi sengaja tidak diaktifkan: sync boleh otomatis, tetapi finalisasi tagihan tetap aksi manual owner setelah review.
 - README + deploy Windows + Cloudflared + backup script tersedia.
 
 

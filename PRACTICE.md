@@ -128,6 +128,8 @@ In dev, the verification link is shown on the signup screen. After verifying, si
 5. After the period ends, click **Sync now** so the final usage is imported.
 6. Click **Finalize period**.
 
+Finalization is manual: the app may sync automatically, but the owner must review and click Finalize. The app never auto-finalizes a bill.
+
 Before finalizing, the app checks:
 
 - owner access,
