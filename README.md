@@ -508,6 +508,19 @@ bun run build:web
 bun run build:win
 ```
 
+## CI
+
+`.github/workflows/ci.yml` runs on GitHub Actions for pushes, pull requests, and version tags:
+
+- install dependencies with `bun install --frozen-lockfile`
+- typecheck backend and web
+- run tests
+- run `bun audit`
+- build frontend and Windows executables
+- upload `quota-windows.zip` as a downloadable artifact
+
+Pushing a tag like `v2.1.0` also attaches the ZIP to a GitHub Release. Deployment to the office Windows PC is manual: download the artifact/release, back up PostgreSQL, stop the service, replace the executables and `public/`, then start it again. GitHub-hosted runners cannot reach a private office PC directly.
+
 ## Known limitations
 
 - Usage attribution is per **service account**, not per API key. Use one service account per person.

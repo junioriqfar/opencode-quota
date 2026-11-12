@@ -38,6 +38,10 @@
 - Zod 4.6.7
 - `bun audit`: no vulnerabilities found.
 
+### CI
+
+- Added `.github/workflows/ci.yml`: install, typecheck, tests, audit, Windows build, artifact upload, and release attachment for `v*` tags.
+
 ### Verification
 
 - `bun test`: 19 pass.

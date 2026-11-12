@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck backend
+        run: bunx tsc -p tsconfig.json --noEmit
+
+      - name: Typecheck web
+        run: bunx tsc -p web/tsconfig.json --noEmit
+
+      - name: Test
+        run: bun test
+
+      - name: Dependency audit
+        run: bun audit
+
+      - name: Build frontend and Windows executables
+        run: bun run build:win
+
+      - name: Package Windows ZIP
+        run: |
+          set -euo pipefail
+          rm -rf dist/windows-package
+          mkdir -p dist/windows-package
+          cp dist/quota.exe dist/quota-cli.exe dist/windows-package/
+          cp -R public dist/windows-package/public
+          cp .env.example dist/windows-package/
+          cp deploy/windows/start.bat dist/windows-package/
+          cp deploy/windows/install-task.ps1 dist/windows-package/
+          cp deploy/windows/backup.ps1 dist/windows-package/
+          cp deploy/windows/README-WINDOWS.txt dist/windows-package/
+          cp README.md REVIEW.md PRACTICE.md CHANGELOG.md dist/windows-package/
+          (cd dist/windows-package && zip -r ../quota-windows.zip .)
+          rm -rf dist/windows-package
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencode-quota-windows
+          path: dist/quota-windows.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish release asset
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: opencode-quota-windows
+          path: release
+
+      - name: Attach ZIP to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/**/quota-windows.zip

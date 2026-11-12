@@ -226,6 +226,7 @@ Super-admin:
 - Guard finalisasi: wajib sync sukses setelah periode berakhir; periode finalized yang masih aktif diberi warning agar di-reopen.
 - Auto-finalisasi sengaja tidak diaktifkan: sync boleh otomatis, tetapi finalisasi tagihan tetap aksi manual owner setelah review.
 - README + deploy Windows + Cloudflared + backup script tersedia.
+- CI GitHub Actions: typecheck, tests, audit, build Windows ZIP, artifact/release; deployment ke PC kantor tetap manual.
 
 
 ## 14. Practice reset
