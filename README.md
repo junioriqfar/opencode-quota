@@ -262,7 +262,7 @@ All endpoints are JSON and require a session cookie unless noted.
 ### Auth
 
 - `POST /api/auth/signup` — name, email, password, Turnstile token.
-- `GET /api/auth/verify?token=` — verify email and create session.
+- `GET /api/auth/verify?token=` — verify email only; the user then signs in.
 - `POST /api/auth/login` — email, password.
 - `POST /api/auth/logout`
 - `GET /api/auth/me` — current user + CSRF token.
@@ -316,7 +316,8 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 - Password policy: at least 8 characters with an uppercase letter, a lowercase letter, a number, and a symbol. Enforced on signup, setup, password reset, change-password, and CLI setup.
 - Development email-link disclosure is forced off when `NODE_ENV=production`.
 - Invitation emails HTML-escape user-supplied group names and strip control characters from subjects.
-- Password change notifies the account email and signs out all other sessions.
+- Password change and reset invalidate outstanding reset/verify tokens and sign out other sessions.
+- Email verification does not create a session; users sign in after verifying.
 - Sessions: random 32-byte token, SHA-256 hash in DB, HttpOnly/Secure/SameSite cookie.
 - CSRF: per-session token + Origin check.
 - Email tokens: one-time, hashed in DB, short expiry.
@@ -326,7 +327,9 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 - Turnstile: required in production (server refuses to start without both keys); only bypassed in development.
 - Setup guard: only when the `users` table is empty; a table lock serializes concurrent setup requests.
 - Setup token: static from `SETUP_TOKEN`; in development an empty value generates one stable token and logs it once. Page access never rotates it.
-- Turnstile server-side verification when configured.
+- Turnstile server-side verification when configured; required in production.
+- Production sessions use the `__Host-qs_session` cookie, HSTS, and `Cache-Control: no-store` on API responses.
+- Dependency audit is clean after upgrading React Router, Vite, and Zod.
 - Console keys: AES-256-GCM with per-record nonce and `group_id` AAD; never returned to the browser.
 - Tenant isolation: every group query is scoped by `group_id` and membership checks.
 - Super-admin cannot decrypt keys.

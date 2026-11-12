@@ -108,9 +108,9 @@ Check:
 2. Enter an email or leave it empty to generate a one-time link.
 3. Create the invite.
 4. Copy the link and send it manually (WhatsApp, etc.).
-5. The invitee signs up, verifies email, signs in, and accepts.
+5. The invitee signs up, verifies email, signs in, and accepts the invite.
 
-In dev, the verification link is shown on the signup screen.
+In dev, the verification link is shown on the signup screen. After verifying, sign in again.
 
 ## Step 7 — Map service accounts
 

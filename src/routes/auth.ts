@@ -32,6 +32,7 @@ import { clientIp, parseJson, rateLimit } from "../http.ts";
 import { verifyTurnstile } from "../turnstile.ts";
 import { getAppSettings } from "../billing.ts";
 import { APP_NAME } from "../../shared/brand.ts";
+import { safeNextPath } from "../../shared/redirect.ts";
 
 const auth = new Hono<AppEnv>();
 
@@ -229,6 +230,10 @@ auth.post("/change-password", requireAuth, async (c) => {
   `;
   // Keep this session signed in, sign out everywhere else.
   await sql`delete from sessions where user_id = ${auth.user.id} and id <> ${auth.session.id}`;
+  await sql`
+    delete from email_tokens
+    where user_id = ${auth.user.id} and type in ('reset', 'verify')
+  `;
   await audit({ groupId: null, actorUserId: auth.user.id, action: "auth.password_changed" });
   const notification = await sendPasswordChangedEmail(auth.user.email, {
     attempts: 2,
@@ -262,17 +267,11 @@ auth.get("/verify", async (c) => {
   >`select * from users where id = ${consumed.userId} limit 1`;
   const user = rows[0];
   if (!user) throw badRequest("Account not found.");
-  const session = await createSession(user.id, c);
   await audit({ groupId: null, actorUserId: user.id, action: "auth.email_verified", target: user.email });
   return c.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      isSuperadmin: user.is_superadmin,
-      emailVerified: true,
-      csrfToken: session.csrfToken,
-    },
+    ok: true,
+    email: user.email,
+    next: safeNextPath(c.req.query("next")) ?? null,
   });
 });
 
@@ -345,6 +344,10 @@ auth.post("/reset", async (c) => {
     where id = ${consumed.userId}
   `;
   await sql`delete from sessions where user_id = ${consumed.userId}`;
+  await sql`
+    delete from email_tokens
+    where user_id = ${consumed.userId} and type in ('reset', 'verify')
+  `;
   await audit({ groupId: null, actorUserId: consumed.userId, action: "auth.password_reset" });
   return c.json({ ok: true });
 });

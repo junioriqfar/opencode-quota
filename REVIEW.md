@@ -16,7 +16,7 @@ Never commit `.env` or real account credentials.
 ### 1. Auth
 
 - `/login` — sign in, with Turnstile when configured.
-- `/signup` — open signup, email verification, password strength meter. In dev, the verification link is shown on screen / logged.
+- `/signup` — open signup, email verification, password strength meter. In dev, the verification link is shown on screen / logged. Verification does not auto-login; sign in afterward.
 - `/forgot` and `/reset` — reset password. Dev reset link is shown; reset enforces the password policy.
 - `/setup` — only available while no super-admin exists. Production uses `SETUP_TOKEN` and enforces the password policy.
 - Account menu — change theme, change password, sign out with confirmation.
