@@ -20,6 +20,10 @@ jobs:
     name: Typecheck, test, build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      SESSION_SECRET: ci-test-session-secret-not-used-in-production
+      APP_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     steps:
       - name: Checkout
         uses: actions/checkout@v4
