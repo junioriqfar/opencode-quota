@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth-context";
 import { post } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { usePageMeta } from "@/hooks/use-page-meta";
+import { safeNextPath } from "@shared/redirect";
 
 export function LoginPage() {
   const { user, loading, config, login, setupRequired } = useAuth();
@@ -25,7 +26,7 @@ export function LoginPage() {
   const [devVerifyUrl, setDevVerifyUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const [search] = useSearchParams();
-  const next = search.get("next") || "/app";
+  const next = safeNextPath(search.get("next")) ?? "/app";
   const signupHref = next === "/app" ? "/signup" : `/signup?next=${encodeURIComponent(next)}`;
   usePageMeta({ title: "Sign in" });
 

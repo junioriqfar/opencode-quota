@@ -34,7 +34,7 @@ async function seedDev(): Promise<void> {
   }
   const email = normalizeEmail(process.env.SEED_ADMIN_EMAIL ?? "admin@example.test");
   const generated = !process.env.SEED_ADMIN_PASSWORD;
-  const password = process.env.SEED_ADMIN_PASSWORD ?? randomToken(18);
+  const password = process.env.SEED_ADMIN_PASSWORD ?? `${randomToken(18)}aA1!`;
   const created = await createFirstSuperadmin({
     email,
     password,

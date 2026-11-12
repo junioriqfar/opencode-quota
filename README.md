@@ -309,7 +309,9 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 ## Security
 
 - Passwords: Argon2id via `Bun.password`.
-- Password policy: at least 8 characters with an uppercase letter, a lowercase letter, a number, and a symbol (signup and change-password).
+- Password policy: at least 8 characters with an uppercase letter, a lowercase letter, a number, and a symbol. Enforced on signup, setup, password reset, change-password, and CLI setup.
+- Development email-link disclosure is forced off when `NODE_ENV=production`.
+- Invitation emails HTML-escape user-supplied group names and strip control characters from subjects.
 - Password change notifies the account email and signs out all other sessions.
 - Sessions: random 32-byte token, SHA-256 hash in DB, HttpOnly/Secure/SameSite cookie.
 - CSRF: per-session token + Origin check.

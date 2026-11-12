@@ -45,6 +45,7 @@ function intEnv(name: string, fallback: number): number {
 
 const root = process.cwd();
 const nodeEnv = process.env.NODE_ENV ?? "development";
+const isProduction = nodeEnv === "production";
 const appUrl = process.env.APP_URL ?? `http://127.0.0.1:${intEnv("PORT", 8788)}`;
 const port = intEnv("PORT", 8788);
 
@@ -52,7 +53,7 @@ export const config = {
   root,
   publicDir: resolve(root, "public"),
   nodeEnv,
-  isProduction: nodeEnv === "production",
+  isProduction,
   host: process.env.HOST ?? "127.0.0.1",
   port,
   appUrl,
@@ -66,7 +67,7 @@ export const config = {
   emailFrom: process.env.EMAIL_FROM ?? `${APP_NAME} <noreply@example.com>`,
   turnstileSiteKey: process.env.TURNSTILE_SITE_KEY ?? "",
   turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY ?? "",
-  devExposeEmailLinks: boolEnv("DEV_EXPOSE_EMAIL_LINKS", false),
+  devExposeEmailLinks: !isProduction && boolEnv("DEV_EXPOSE_EMAIL_LINKS", false),
   cookieSecure: boolEnv("COOKIE_SECURE", nodeEnv === "production"),
   syncIntervalMs: intEnv("SYNC_INTERVAL_MS", 10 * 60_000),
   planPriceUsd: Number.parseFloat(process.env.PLAN_PRICE_USD ?? "10") || 10,

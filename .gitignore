@@ -13,3 +13,6 @@ backups/
 docs/screenshots/
 !web/public/
 !web/public/**
+
+# Local agent/runtime state
+/data/

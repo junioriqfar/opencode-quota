@@ -127,6 +127,9 @@ console.log(`[server] database: ${config.databaseUrl.replace(/\/\/[^@]+@/, "//**
 console.log(`[server] public dir: ${config.publicDir}`);
 if (!config.resendApiKey) console.warn("[server] Resend is not configured; emails will be logged.");
 if (!config.turnstileSecretKey) console.warn("[server] Turnstile is not configured; dev mode is active.");
+if (config.isProduction && process.env.DEV_EXPOSE_EMAIL_LINKS === "true") {
+  console.warn("[security] DEV_EXPOSE_EMAIL_LINKS is ignored in production.");
+}
 
 function shutdown(signal: string): void {
   console.log(`[server] ${signal}, shutting down`);

@@ -3,7 +3,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { config } from "./config.ts";
 import { newId, sql, toIso } from "./db.ts";
 import { hashToken, randomToken, timingSafeEqualText } from "./crypto.ts";
-import { forbidden, unauthorized } from "./errors.ts";
+import { badRequest, forbidden, unauthorized } from "./errors.ts";
 
 export interface AuthUser {
   id: string;
@@ -226,6 +226,24 @@ export class SetupUnavailableError extends Error {
   }
 }
 
+function joinWithAnd(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+export function assertStrongPassword(password: string, label = "Password"): void {
+  if (password.length < 8) throw badRequest(`${label} must be at least 8 characters.`);
+  if (password.length > 128) throw badRequest(`${label} must be at most 128 characters.`);
+  const missing: string[] = [];
+  if (!/[A-Z]/.test(password)) missing.push("an uppercase letter");
+  if (!/[a-z]/.test(password)) missing.push("a lowercase letter");
+  if (!/[0-9]/.test(password)) missing.push("a number");
+  if (!/[^A-Za-z0-9]/.test(password)) missing.push("a symbol");
+  if (missing.length > 0) {
+    throw badRequest(`${label} must include ${joinWithAnd(missing)}.`);
+  }
+}
+
 export async function countUsers(): Promise<number> {
   const rows = await sql<{ count: string }[]>`
     select count(*)::text as count from users
@@ -242,6 +260,7 @@ export async function createFirstSuperadmin(input: {
   password: string;
   name: string;
 }): Promise<{ id: string; email: string; name: string }> {
+  assertStrongPassword(input.password);
   const email = normalizeEmail(input.email);
   const name = input.name.trim();
   const passwordHash = await hashPassword(input.password);

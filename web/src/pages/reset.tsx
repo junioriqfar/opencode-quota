@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrength, missingPasswordRules } from "@/components/password-strength";
 import { post } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { usePageMeta } from "@/hooks/use-page-meta";
@@ -25,6 +26,11 @@ export function ResetPage() {
     setError(null);
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
+      return;
+    }
+    const missing = missingPasswordRules(password);
+    if (missing.length > 0) {
+      setError(`Password must include ${missing.join(", ")}.`);
       return;
     }
     if (password !== confirm) {
@@ -84,6 +90,7 @@ export function ResetPage() {
             <Label htmlFor="confirm">Confirm password</Label>
             <PasswordInput id="confirm" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </div>
+          <PasswordStrength value={password} />
           <Button className="w-full" type="submit" disabled={submitting}>
             {submitting && <Loader2 className="animate-spin" />}
             Reset password

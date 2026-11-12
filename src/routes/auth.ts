@@ -4,6 +4,7 @@ import { config } from "../config.ts";
 import {
   assertCsrf,
   assertOrigin,
+  assertStrongPassword,
   consumeEmailToken,
   createEmailToken,
   createFirstSuperadmin,
@@ -308,6 +309,7 @@ auth.post("/reset", async (c) => {
     c,
     z.object({ token: z.string().min(10), password: passwordSchema }),
   );
+  assertStrongPassword(body.password);
   rateLimit(`reset:${clientIp(c)}`, 10, 15 * 60_000);
   const consumed = await consumeEmailToken(body.token, "reset");
   if (!consumed) throw badRequest("This reset link is invalid or expired.");

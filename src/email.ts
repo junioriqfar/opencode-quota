@@ -20,6 +20,27 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    switch (character) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
+}
+
+function sanitizeHeaderValue(value: string): string {
+  return value.replace(/[\u0000-\u001f\u007f]+/g, " ").trim();
+}
+
 export async function sendEmail(
   input: SendEmailInput,
   options: SendEmailOptions = {},
@@ -159,16 +180,18 @@ export async function sendPasswordChangedEmail(
 
 export async function sendInviteEmail(email: string, groupName: string, token: string): Promise<{ link: string; sent: boolean }> {
   const link = `${config.appUrl}/invite/${encodeURIComponent(token)}`;
+  const displayName = sanitizeHeaderValue(groupName) || "a group";
+  const htmlName = escapeHtml(displayName);
   const result = await sendEmail({
     to: email,
-    subject: `You are invited to ${groupName} on ${APP_NAME}`,
+    subject: `You are invited to ${displayName} on ${APP_NAME}`,
     html: layout(
-      `Invitation to ${groupName}`,
-      `<p>You have been invited to join <strong>${groupName}</strong>.</p>
+      `Invitation to ${htmlName}`,
+      `<p>You have been invited to join <strong>${htmlName}</strong>.</p>
        <p><a href="${link}" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">Accept invitation</a></p>
        <p>This link expires in 7 days.</p>`,
     ),
-    text: `Join ${groupName}: ${link}`,
+    text: `Join ${displayName}: ${link}`,
   });
   return { link, sent: result.sent };
 }

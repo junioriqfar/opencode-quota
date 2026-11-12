@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrength, missingPasswordRules } from "@/components/password-strength";
 import { post } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { notifyError, notifySuccess } from "@/lib/notify";
@@ -32,6 +33,11 @@ export function SetupPage() {
     setError(null);
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
+      return;
+    }
+    const missing = missingPasswordRules(password);
+    if (missing.length > 0) {
+      setError(`Password must include ${missing.join(", ")}.`);
       return;
     }
     if (password !== confirm) {
@@ -92,6 +98,7 @@ export function SetupPage() {
             <PasswordInput id="confirm" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </div>
         </div>
+        <PasswordStrength value={password} />
         <Button className="w-full" type="submit" disabled={submitting}>
           {submitting && <Loader2 className="animate-spin" />}
           Create super-admin
