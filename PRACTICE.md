@@ -135,7 +135,7 @@ Before finalizing, the app checks:
 - there is usage,
 - every service account with usage is mapped.
 
-After finalizing:
+After finalizing, the bill and daily chart are frozen, while the quota meter cards stay live from the latest sync.
 
 - member amounts are locked,
 - daily chart uses the snapshot,

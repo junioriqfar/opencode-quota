@@ -222,6 +222,7 @@ Super-admin:
 - Hardening L1-L3/M7: token reset/verify dicabut saat ganti/reset password, verifikasi email tidak auto-login, cookie `__Host-`, HSTS, `Cache-Control: no-store` untuk API, React Router/Vite/Zod diperbarui, `bun audit` bersih.
 - Status audit: C1, H1, M1-M7, L1-L11 selesai. Termasuk: key ambiguity rejection, log redaction, backup verification/ACL, disabled-group sync filter, CLI password via stdin/env, invite revocation/dedupe.
 - UI: account menu, change password, password strength, Turnstile login/reset, responsive layout, scheduled sync.
+- Bug fix: persentase meter bulanan pada periode finalized sekarang memakai snapshot meter terbaru yang sama dengan used/limit, bukan snapshot finalisasi yang membuat kartu tidak konsisten.
 - README + deploy Windows + Cloudflared + backup script tersedia.
 
 

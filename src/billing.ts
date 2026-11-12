@@ -573,12 +573,12 @@ export async function buildGroupSummary(
         lastActiveAt: mapping?.lastActiveAt ?? null,
       };
     });
-    const monthPercent = round2(toNumber(period.snapshot_month_percent ?? 0));
     const meter = await getMeter(sql, groupId, period.id);
     const quota = quotaFromMeter(meter);
-    if (period.snapshot_month_percent !== null) {
-      quota.month.percent = monthPercent;
-    }
+    // Keep the meter card internally consistent: used/limit come from the
+    // latest snapshots. Finalization freezes the bill, not the live meter.
+    // (Previously only the percentage was replaced with the finalized value,
+    // producing cards like "65% used" with 76% worth of usage.)
     const finalizedBy = period.finalized_by
       ? (
           await sql<{ name: string }[]>`
