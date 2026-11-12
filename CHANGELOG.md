@@ -9,6 +9,7 @@
   - Per-member `quotaPct` is recomputed from the live monthly percentage while billing amounts stay snapshotted.
 - Periods are keyed by `start_date` when syncing, preventing duplicate periods if the Console start timestamp changes slightly.
 - Browser favicon now uses the same gradient + Activity mark as the app header on every page.
+- Finalization now requires a successful sync after the period end date, and finalized-before-end periods show a warning so they can be reopened.
 
 ### Security
 

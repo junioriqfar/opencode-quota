@@ -125,12 +125,14 @@ In dev, the verification link is shown on the signup screen. After verifying, si
 2. Select the period.
 3. Enter the actual total IDR (for practice: `170000`).
 4. Save.
-5. Click **Finalize period**.
+5. After the period ends, click **Sync now** so the final usage is imported.
+6. Click **Finalize period**.
 
 Before finalizing, the app checks:
 
 - owner access,
 - the period has ended,
+- a successful sync happened after the period ended,
 - total IDR is set,
 - there is usage,
 - every service account with usage is mapped.

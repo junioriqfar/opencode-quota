@@ -224,6 +224,7 @@ In development, an empty secret bypasses verification. In production, both Turns
 - Finalization requires:
   - owner access,
   - the period to have ended,
+  - a successful sync after the period ended,
   - a total IDR bill,
   - at least one usage row,
   - no unmapped service account with usage.
@@ -234,6 +235,7 @@ In development, an empty secret bypasses verification. In production, both Turns
 - After finalization, sync ignores new usage for that period and does not modify the finalized period window or plan price. The bill and daily chart are frozen, while the quota meter cards stay live from the latest sync so used/limit and percentage remain consistent.
 - The owner can reopen a finalized period. Reopening deletes the snapshot, returns to draft, and **re-syncs the last 90 days** so late service-account usage is imported.
 - Previous periods stay available in the period selector. Once finalized, the bill, daily chart, usage attribution, and meter snapshot for that period do not change.
+- If a legacy period was finalized before its end date, the dashboard warns that later usage is missing and the owner can reopen it.
 - Meter cards and per-member quota estimates remain live from the latest Console snapshot so they match OpenCode Console; only billing values are frozen.
 
 ### New service account after finalization

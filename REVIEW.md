@@ -53,7 +53,7 @@ Tabs:
 - **Connection** — Console read-only key is connected and masked. Try “Sync now”.
 - **Members** — members, invite by email or link, pending invites, remove member, model usage modal per member.
 - **Mapping** — map service accounts to members. The reader account is excluded.
-- **Billing** — set total IDR, finalize after the period ends, reopen, see blockers.
+- **Billing** — set total IDR, sync after the period ends, finalize, reopen, see blockers.
 - **Audit** — key/invite/mapping/billing actions.
 - **Settings** — rename the group or delete it permanently (owner only). Deletion uses a shadCN alert dialog and requires typing the group name.
 

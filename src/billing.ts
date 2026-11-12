@@ -597,6 +597,11 @@ export async function buildGroupSummary(
     if (connection?.status === "needs_reauth") {
       warnings.push("The Console key needs to be reconnected.");
     }
+    if (new Date(period.end_at).getTime() > Date.now()) {
+      warnings.push(
+        "This period was finalized before its end date. Later usage is not included; the owner can reopen it.",
+      );
+    }
     const totals = totalsFromMembers(members);
     return {
       group: {
@@ -651,6 +656,11 @@ export async function buildGroupSummary(
   if (!isOwner) blockers.push("Only the group owner can finalize this period.");
   if (new Date(period.end_at).getTime() > Date.now()) {
     blockers.push("This period is still active. Finalization is available after it ends.");
+  } else if (connection) {
+    const lastSync = connection.last_sync_at ? new Date(connection.last_sync_at).getTime() : 0;
+    if (lastSync < new Date(period.end_at).getTime()) {
+      blockers.push("Run a successful sync after the period ended before finalizing.");
+    }
   }
   if (period.total_idr === null) blockers.push("Enter the total bill in IDR.");
   if (ctx.totalCost === 0) blockers.push("There is no usage in this period.");
@@ -1134,6 +1144,15 @@ export async function finalizePeriod(
     if (period.status !== "draft") throw conflict("This period is already finalized.");
     if (new Date(period.end_at).getTime() > Date.now()) {
       throw badRequest("This period is still active. Wait until it ends before finalizing.");
+    }
+    const connection = await getConnection(groupId);
+    if (connection) {
+      const lastSync = connection.last_sync_at
+        ? new Date(connection.last_sync_at).getTime()
+        : 0;
+      if (lastSync < new Date(period.end_at).getTime()) {
+        throw badRequest("Run a successful sync after the period ended before finalizing.");
+      }
     }
     if (period.total_idr === null) throw badRequest("Enter the total bill in IDR before finalizing.");
 
