@@ -63,7 +63,10 @@ export async function ensurePeriod(
   const startDate = datePart(startAt);
   const endDate = datePart(endAt);
   const existing = await sql<PeriodRow[]>`
-    select * from periods where group_id = ${groupId} and start_at = ${startAt} limit 1
+    select * from periods
+    where group_id = ${groupId} and start_date = ${startDate}
+    order by start_at asc
+    limit 1
   `;
   if (existing[0]) {
     if (existing[0].status === "finalized") return existing[0];
