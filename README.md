@@ -336,6 +336,10 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 - Audit log for group, key, invite, mapping, billing, and admin actions.
 - Security headers: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, noindex.
 
+### Security review status
+
+A read-only security review covered auth, tenant isolation, Console key handling, sync/billing integrity, input handling, headers, deployment scripts, and dependencies. Implemented hardening includes: production-only email-link disclosure off, required production Turnstile, HTML-escaped invite emails, sanitized auth redirects, setup/reset/CLI password policy, finalized-period immutability, dummy Argon2 timing equalization, per-IP rate limits, token invalidation on password changes, no session on email verification, `__Host-` production cookie, HSTS, no-store API responses, and a clean `bun audit`.
+
 ### Public repository hygiene
 
 - `.env`, `.env.*` are git-ignored; only `.env.example` is committed.
