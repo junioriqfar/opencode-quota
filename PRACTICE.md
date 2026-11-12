@@ -199,6 +199,10 @@ To view the previous demo instead:
 2. Restart the server.
 3. Sign in with an account from that database. If you do not remember one, create a new super-admin with the CLI.
 
+## Before real billing
+
+Follow the production readiness checklist in `README.md`: explicit `DATABASE_URL`, `APP_URL` with `https://`, Turnstile and Resend keys, a dedicated PostgreSQL role, a non-SYSTEM task account, and a rehearsed restore.
+
 ## Notes
 
 - App login and OpenCode Console login are separate.

@@ -1,9 +1,21 @@
 # Run as Administrator in PowerShell.
-# Edit $AppDir if the app is not in C:\opencode-quota.
-# SECURITY: SYSTEM has full machine privileges. For a hardened deployment,
-# create a dedicated low-privilege service account and change -User below;
-# grant it read/write only to $AppDir and the backup directory.
-$AppDir = "C:\opencode-quota"
+# Usage:
+#   .\install-task.ps1
+#     -> runs as SYSTEM (convenient, but SYSTEM has full machine privileges)
+#   .\install-task.ps1 -ServiceUser "PC-KANTOR\svc-quota"
+#     -> runs as a dedicated low-privilege account; you will be prompted for its password
+#
+# For the hardened setup, create the account first:
+#   net user svc-quota "<strong-password>" /add /passwordchk /comment:"OpenCode Quota service"
+#   net localgroup "Log on as a batch job" svc-quota /add   # or grant via secpol.msc
+# The script grants Modify on $AppDir so the account can read .env and write logs.
+
+param(
+  [string]$AppDir = "C:\opencode-quota",
+  [string]$ServiceUser = "SYSTEM"
+)
+
+$ErrorActionPreference = "Stop"
 $TaskName = "OpenCode Quota"
 
 if (-not (Test-Path "$AppDir\quota.exe")) {
@@ -22,15 +34,40 @@ $Settings = New-ScheduledTaskSettingsSet `
   -AllowStartIfOnBatteries `
   -DontStopIfGoingOnBatteries
 
+if ($ServiceUser -eq "SYSTEM") {
+  Write-Warning @"
+Running as SYSTEM gives the app full machine privileges.
+For a hardened deployment, create a dedicated account and re-run:
+  .\install-task.ps1 -ServiceUser "$env:COMPUTERNAME\svc-quota"
+"@
+  $CredentialArgs = @{ User = "SYSTEM" }
+} else {
+  $Credential = Get-Credential -UserName $ServiceUser `
+    -Message "Windows password for $ServiceUser (required to start the task at boot)"
+  $CredentialArgs = @{
+    User = $Credential.UserName
+    Password = $Credential.GetNetworkCredential().Password
+  }
+  # The service account needs read/write on the app directory (read .env, write data).
+  try {
+    icacls $AppDir /grant "$($Credential.UserName):(OI)(CI)M" 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "icacls exited $LASTEXITCODE" }
+  } catch {
+    Write-Warning "Could not grant Modify on $AppDir to $($Credential.UserName). Verify ACLs manually."
+  }
+}
+
 Register-ScheduledTask `
   -TaskName $TaskName `
   -Action $Action `
   -Trigger $Trigger `
   -Settings $Settings `
   -RunLevel Highest `
-  -User "SYSTEM" `
-  -Force
+  @CredentialArgs `
+  -Force | Out-Null
 
 Start-ScheduledTask -TaskName $TaskName
 Start-Sleep -Seconds 2
-Write-Host "Service installed. Check: http://127.0.0.1:8787/api/health"
+$Port = ((Get-Content (Join-Path $AppDir ".env") | Where-Object { $_ -match '^PORT=' }) -replace '^PORT=', '')
+if (-not $Port) { $Port = "8788" }
+Write-Host "Service installed as $ServiceUser. Check: http://127.0.0.1:$Port/api/health"

@@ -11,6 +11,18 @@
 - Browser favicon now uses the same gradient + Activity mark as the app header on every page.
 - Finalization now requires a successful sync after the period end date, and finalized-before-end periods show a warning so they can be reopened. Finalization remains manual; the app never auto-finalizes a bill.
 
+### Added
+
+- Production readiness checklist in `README.md`, covering config, database, host, and the proxy trust boundary.
+- `install-task.ps1` now accepts `-ServiceUser` (prompts for the password) and grants that account Modify on the app directory, so the task no longer has to run as SYSTEM.
+- `test/config.test.ts` covers the production config guardrails.
+
+### Changed
+
+- `deploy/windows/backup.ps1` passes the database URI straight to `pg_dump`, so passwords containing `@` or `:` work when percent-encoded.
+- `.env.example` and the docs use the real database name `opencode_quota` and default port 8788; production now refuses to start without an explicit `DATABASE_URL`.
+- `APP_URL` must be `https://` in production, and startup warns when Resend is unconfigured or `HOST` is not loopback.
+
 ### Security
 
 - Production hardening: `NODE_ENV` defaults to production, `DEV_EXPOSE_EMAIL_LINKS` is forced off in production, dev-only origins are removed, and Turnstile keys are required in production.

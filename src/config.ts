@@ -67,7 +67,7 @@ export const config = {
   port,
   appUrl,
   databaseUrl:
-    process.env.DATABASE_URL ?? "postgres://postgres@127.0.0.1:55432/quota_status",
+    process.env.DATABASE_URL ?? "postgres://postgres@127.0.0.1:5432/opencode_quota",
   sessionSecret: process.env.SESSION_SECRET ?? "",
   encryptionKey: process.env.APP_ENCRYPTION_KEY ?? "",
   setupToken: process.env.SETUP_TOKEN ?? "",
@@ -97,6 +97,27 @@ if (keyBytes.length !== 32) {
   throw new Error(
     "APP_ENCRYPTION_KEY must be 32 bytes base64. Generate one with: openssl rand -base64 32",
   );
+}
+
+if (config.isProduction) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is required in production.");
+  }
+  if (!config.appUrl.startsWith("https://")) {
+    throw new Error(
+      "APP_URL must be an https:// URL in production; the __Host- session cookie requires a secure origin.",
+    );
+  }
+  if (!config.resendApiKey) {
+    console.warn(
+      "[config] RESEND_API_KEY is empty; verification and password-reset emails will not be delivered.",
+    );
+  }
+  if (config.host !== "127.0.0.1" && config.host !== "localhost" && config.host !== "::1") {
+    console.warn(
+      `[config] HOST=${config.host} accepts non-local connections. Client IPs are read from cf-connecting-ip/x-forwarded-for, so only expose the app behind Cloudflared or strip those headers at your proxy.`,
+    );
+  }
 }
 
 export type AppConfig = typeof config;

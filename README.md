@@ -83,7 +83,7 @@ For production, use the existing PostgreSQL on the office PC and create a dedica
 
 ```sql
 CREATE USER quota_app WITH PASSWORD 'change-me';
-CREATE DATABASE quota_status OWNER quota_app;
+CREATE DATABASE opencode_quota OWNER quota_app;
 ```
 
 Keep PostgreSQL listening on localhost only. If the password contains special characters, URL-encode them in `DATABASE_URL`.
@@ -395,7 +395,7 @@ C:\opencode-quota\
 Production `.env`:
 
 ```env
-DATABASE_URL=postgres://quota_app:change-me@127.0.0.1:5432/quota_status
+DATABASE_URL=postgres://quota_app:change-me@127.0.0.1:5432/opencode_quota
 APP_URL=https://quota.example.com
 PORT=8787
 HOST=127.0.0.1
@@ -451,6 +451,47 @@ cloudflared service restart
 
 Set `APP_URL=https://quota.example.com` exactly. If using a different hostname, update both Cloudflared and `APP_URL`.
 
+## Production readiness checklist
+
+Run this once on the office PC before real billing starts.
+
+### Configuration
+
+- [ ] `NODE_ENV=production` and `HOST=127.0.0.1`
+- [ ] `DATABASE_URL` is set explicitly. Production refuses to start without it.
+- [ ] `APP_URL` is the exact `https://` hostname served by Cloudflared. Production refuses a plain `http://` URL because the `__Host-` cookie requires a secure origin.
+- [ ] `SESSION_SECRET` and `APP_ENCRYPTION_KEY` are 32-byte base64 values, stored in a password manager.
+- [ ] `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` are set. Startup fails without them.
+- [ ] `RESEND_API_KEY` and `EMAIL_FROM` are set. Without Resend, verification and password-reset emails are not delivered.
+- [ ] `SETUP_TOKEN` is set before `/setup`. Setup closes permanently once a user exists.
+- [ ] `PORT` matches the Cloudflared ingress target.
+
+### Database
+
+- [ ] PostgreSQL listens on localhost only (`listen_addresses = 'localhost'`).
+- [ ] The app connects as a dedicated non-superuser role that owns only `opencode_quota`.
+- [ ] `deploy/windows/backup.ps1` runs daily and prunes dumps older than 14 days.
+- [ ] A restore has been rehearsed into a scratch database:
+
+  ```powershell
+  createdb -h 127.0.0.1 -U postgres opencode_quota_restore
+  & "C:\Program Files\PostgreSQL\18\bin\pg_restore.exe" `
+    --dbname=postgres://postgres@127.0.0.1:5432/opencode_quota_restore `
+    --clean --if-exists "C:\opencode-quota\backup\quota-YYYYMMDD-HHmmss.dump"
+  ```
+
+  Point a temporary `.env` at the scratch database, start on another port, and log in.
+
+### Host
+
+- [ ] The scheduled task runs as a dedicated account, not SYSTEM: `.\install-task.ps1 -ServiceUser "PC-KANTOR\svc-quota"`.
+- [ ] Only Cloudflared reaches the app; no inbound ports are opened on the router.
+- [ ] Health check returns `{"ok":true,"database":"ok"}` after a reboot.
+
+### Trust boundary
+
+Client IPs for rate limiting come from `cf-connecting-ip` / `x-forwarded-for`. Keep `HOST=127.0.0.1` so only Cloudflared can reach the app. If you ever bind to a LAN address, make the proxy strip those headers; otherwise callers can spoof their IP and bypass per-IP limits. The server warns at startup when `HOST` is not loopback.
+
 ## Migrating v1 data
 
 The v1 app stores usage in `../quota-status/data/quota.db`.
@@ -481,7 +522,7 @@ PostgreSQL is the source of truth. Backup with `pg_dump` daily:
 ```powershell
 $env:PGPASSWORD="change-me"
 & "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" `
-  -h 127.0.0.1 -U quota_app -d quota_status -Fc `
+  -h 127.0.0.1 -U quota_app -d opencode_quota -Fc `
   -f "C:\opencode-quota\backup\quota-$(Get-Date -Format yyyyMMdd-HHmmss).dump"
 ```
 

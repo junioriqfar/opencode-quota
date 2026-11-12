@@ -214,7 +214,7 @@ Super-admin:
 - Migrasi v1: grup **Example Team**, service account API dipetakan ke owner, anggota kedua diundang dan dipetakan (dev), usage/periode/meter diimpor.
 - Dev group saat ini draft dengan total tagihan kosong; finalisasi sudah diuji lalu di-reopen agar siap diisi tagihan asli.
 - Verifikasi: login, invite accept, mapping, finalization block, finalization, reopen, cross-tenant 403, member cannot access owner/admin endpoints.
-- Tests: 19 pass (money, CSV parser, crypto key encryption, redirect, sync schedule).
+- Tests: 22 pass (money, CSV parser, crypto key encryption, redirect, sync schedule, production config guardrails).
 - Windows build: `dist/quota.exe` (server) + `dist/quota-cli.exe` (admin), PE32+ x86-64.
 - Browser verification: login, account menu/change password, group list, dashboard, admin connection/members/mapping/billing/audit, super-admin, Turnstile flows.
 - Security hardening: password policy di setup/reset/CLI, escape HTML email undangan, sanitasi redirect login, dev email links dipaksa off di production.
@@ -227,6 +227,7 @@ Super-admin:
 - Auto-finalisasi sengaja tidak diaktifkan: sync boleh otomatis, tetapi finalisasi tagihan tetap aksi manual owner setelah review.
 - README + deploy Windows + Cloudflared + backup script tersedia.
 - CI GitHub Actions: typecheck, tests, audit, build Windows ZIP, artifact/release; deployment ke PC kantor tetap manual.
+- Production readiness: config production fail-fast (DATABASE_URL wajib, APP_URL wajib https), warning RESEND_API_KEY kosong dan HOST non-loopback, installer task mendukung service account low-privilege, backup lewat connection URI, checklist produksi + uji restore di README.
 
 
 ## 14. Practice reset
