@@ -203,6 +203,57 @@ To view the previous demo instead:
 
 Follow the production readiness checklist in `README.md`: explicit `DATABASE_URL`, `APP_URL` with `https://`, Turnstile and Resend keys, a dedicated PostgreSQL role, a non-SYSTEM task account, and a rehearsed restore.
 
+## Period rollover (15 Nov 2026)
+
+The current Console cycle is **15 Oct 09:20 → 15 Nov 09:20 WIB**. The period ends at 09:20, not at midnight.
+
+### Prepare — 14 Nov
+
+1. Confirm the period is still **draft** (Manage → Billing). If it was finalized early, **Reopen** it.
+2. Set the IDR bill if it is still empty.
+3. Map every service account that has usage. Unmapped accounts block finalization.
+4. Run a backup:
+   ```powershell
+   .\backup.ps1
+   ```
+5. Rehearse the state machine on a throwaway clone:
+   ```bash
+   createdb -h 127.0.0.1 -U postgres opencode_quota_rehearsal
+   pg_dump -h 127.0.0.1 -U postgres -Fc opencode_quota | \
+     pg_restore -h 127.0.0.1 -U postgres -d opencode_quota_rehearsal
+   DATABASE_URL=postgres://postgres@127.0.0.1:5432/opencode_quota_rehearsal \
+     bun scripts/rehearse-rollover.ts
+   dropdb -h 127.0.0.1 -U postgres opencode_quota_rehearsal
+   ```
+   It checks the active-period block, the missing-sync block, finalization, the frozen bill, reopen, and the period selector.
+
+### Roll over — 15 Nov, after 09:20 WIB
+
+1. Click **Sync now**. Wait for it to finish successfully.
+2. Open the dashboard and compare with OpenCode Console:
+   - monthly meter `used/limit`,
+   - per-member list cost and quota estimates,
+   - the last day in the daily chart.
+3. Check the guard status in Billing. Finalize stays blocked if no successful sync happened after 09:20.
+4. Enter the final IDR bill, then click **Finalize period**. This is manual on purpose; the app never auto-finalizes.
+5. Confirm the bill is frozen:
+   ```bash
+   psql "$DATABASE_URL" -c \
+     "select start_at, end_at, status, total_idr, finalized_at from periods order by start_at desc;"
+   ```
+6. Wait for the next sync or click **Sync now** again. The new period **15 Nov → 15 Dec** is created from the Console cycle.
+7. Verify:
+   - the new period is draft and selected by default,
+   - the old period is still selectable in the period selector,
+   - the old period's bill and daily chart no longer change after another sync.
+
+### If something looks wrong
+
+- **Finalized too early or values differ from Console:** click **Reopen** on the period. It returns to draft, deletes the snapshot, and the next sync fills in the missing usage.
+- **New period missing:** the Console export has not reported it yet. Sync again after a few minutes; the app only creates periods from Console data.
+- **Sync failed:** check Manage → Connection for the error. Finalization stays blocked until a sync succeeds after the period end.
+
+
 ## Notes
 
 - App login and OpenCode Console login are separate.

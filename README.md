@@ -487,6 +487,7 @@ Run this once on the office PC before real billing starts.
 - [ ] The scheduled task runs as a dedicated account, not SYSTEM: `.\install-task.ps1 -ServiceUser "PC-KANTOR\svc-quota"`.
 - [ ] Only Cloudflared reaches the app; no inbound ports are opened on the router.
 - [ ] Health check returns `{"ok":true,"database":"ok"}` after a reboot.
+- [ ] The period rollover has been rehearsed on a clone: `bun scripts/rehearse-rollover.ts` (see `PRACTICE.md`).
 
 ### Trust boundary
 
