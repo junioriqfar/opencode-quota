@@ -550,16 +550,26 @@ export async function buildGroupSummary(
         { count: toNumber(row.count), lastActiveAt: toIso(row.last_active_at) },
       ]),
     );
+    const meter = await getMeter(sql, groupId, period.id);
+    const quota = quotaFromMeter(meter);
+    // Meter values and per-member quota estimates stay live from the latest
+    // snapshot so they match OpenCode Console. Finalization freezes the bill,
+    // not the live quota display.
+    const liveMonthPercent = quota.month.limitUsd > 0 ? quota.month.percent : null;
     const members: GroupMemberSummary[] = snapshots.map((row) => {
       const mapping = mappingMap.get(row.member_user_id);
+      const sharePct = round2(toNumber(row.share_pct));
       return {
         userId: row.member_user_id,
         name: row.name,
         role: row.role ?? "member",
         status: row.status === "active" ? "active" : "removed",
         listCostUsd: round4(microToUsd(toNumber(row.list_cost_microcents))),
-        sharePct: round2(toNumber(row.share_pct)),
-        quotaPct: round2(toNumber(row.quota_pct)),
+        sharePct,
+        quotaPct:
+          liveMonthPercent === null
+            ? round2(toNumber(row.quota_pct))
+            : round2((sharePct * liveMonthPercent) / 100),
         amountUsd: round2(toNumber(row.amount_usd)),
         amountIdr: row.amount_idr === null ? null : toNumber(row.amount_idr),
         requests: toNumber(row.requests),
@@ -573,8 +583,6 @@ export async function buildGroupSummary(
         lastActiveAt: mapping?.lastActiveAt ?? null,
       };
     });
-    const meter = await getMeter(sql, groupId, period.id);
-    const quota = quotaFromMeter(meter);
     // Keep the meter card internally consistent: used/limit come from the
     // latest snapshots. Finalization freezes the bill, not the live meter.
     // (Previously only the percentage was replaced with the finalized value,

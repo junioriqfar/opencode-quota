@@ -64,9 +64,6 @@ export function GroupDashboardPage() {
   const group = useApi<GroupBase>(groupId ? `/api/groups/${groupId}` : null);
   usePageMeta({
     title: group.data?.group.name ?? "Group",
-    group: group.data?.group
-      ? { id: group.data.group.id, name: group.data.group.name }
-      : null,
   });
   const summary = useApi<GroupSummary>(
     groupId

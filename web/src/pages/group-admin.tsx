@@ -126,9 +126,6 @@ export function GroupAdminPage() {
   const group = useApi<GroupBase>(groupId ? `/api/groups/${groupId}` : null);
   usePageMeta({
     title: group.data?.group.name ? `${group.data.group.name} · Admin` : "Group admin",
-    group: group.data?.group
-      ? { id: group.data.group.id, name: group.data.group.name, admin: true }
-      : null,
   });
   const members = useApi<{ members: MemberListItem[] }>(groupId ? `/api/groups/${groupId}/members` : null);
   const invites = useApi<{ invites: InviteItem[] }>(groupId ? `/api/groups/${groupId}/invites` : null);

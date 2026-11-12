@@ -1,26 +1,15 @@
-import { useLayoutEffect, useMemo } from "react";
+import { useLayoutEffect } from "react";
 import { pageTitle } from "@shared/brand";
-import { brandFavicon, groupFavicon } from "@/lib/favicon";
+import { brandFavicon } from "@/lib/favicon";
 
 const FAVICON_SELECTOR = 'link[data-app-favicon]';
 
-export function usePageMeta({
-  title,
-  group,
-}: {
-  title?: string | null;
-  group?: { name: string; id: string; admin?: boolean } | null;
-}) {
+export function usePageMeta({ title }: { title?: string | null }) {
   const fullTitle = pageTitle(title);
 
   useLayoutEffect(() => {
     document.title = fullTitle;
   }, [fullTitle]);
-
-  const faviconHref = useMemo(
-    () => (group ? groupFavicon(group) : brandFavicon()),
-    [group?.id, group?.name, group?.admin],
-  );
 
   useLayoutEffect(() => {
     let link = document.querySelector<HTMLLinkElement>(FAVICON_SELECTOR);
@@ -31,12 +20,7 @@ export function usePageMeta({
       link.dataset.appFavicon = "";
       document.head.appendChild(link);
     }
-    const previous = link.getAttribute("href") ?? "/favicon.svg";
-    link.setAttribute("href", faviconHref);
-    return () => {
-      if (link?.getAttribute("href") === faviconHref) {
-        link.setAttribute("href", previous || "/favicon.svg");
-      }
-    };
-  }, [faviconHref]);
+    // Always use the OpenCode Quota mark, matching the app header.
+    link.setAttribute("href", brandFavicon());
+  }, []);
 }

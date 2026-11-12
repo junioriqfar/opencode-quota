@@ -4,8 +4,11 @@
 
 ### Fixed
 
-- Finalized periods no longer show a stale monthly percentage next to live meter values. The monthly meter card now derives its percentage from the same latest snapshot as `used/limit`, instead of overriding only the percentage with the finalization snapshot.
+- Finalized periods no longer show stale quota values. Meter cards and per-member quota estimates stay live from the latest OpenCode Console snapshot, while the bill and daily chart remain frozen.
+  - The monthly percentage now derives from the same latest snapshot as `used/limit` instead of the finalization snapshot.
+  - Per-member `quotaPct` is recomputed from the live monthly percentage while billing amounts stay snapshotted.
 - Periods are keyed by `start_date` when syncing, preventing duplicate periods if the Console start timestamp changes slightly.
+- Browser favicon now uses the same gradient + Activity mark as the app header on every page.
 
 ### Security
 

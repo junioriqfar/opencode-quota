@@ -80,7 +80,7 @@ After finalization:
 
 - Member amounts are locked.
 - Daily chart uses the signed snapshot.
-- New sync does not change the finalized bill or daily chart. Meter cards remain live from the latest sync.
+- New sync does not change the finalized bill or daily chart. Meter cards and per-member quota estimates remain live from the latest sync. Previous periods are still available in the selector.
 - Reopening returns to draft and re-syncs the last 90 days, which covers late service-account usage.
 
 ### 6. Member view
