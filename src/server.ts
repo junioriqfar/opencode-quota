@@ -16,6 +16,7 @@ import adminRoutes from "./routes/admin.ts";
 await initSchema();
 await sql`delete from sessions where expires_at < now() - interval '7 days'`;
 await sql`delete from email_tokens where expires_at < now() - interval '7 days'`;
+await sql`delete from rate_limits where reset_at < now() - interval '1 day'`;
 if (await isSetupAvailable()) {
   logGeneratedSetupToken();
 }

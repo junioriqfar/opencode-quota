@@ -155,7 +155,7 @@ invites.get("/", requireAuth, async (c) => {
 invites.post("/accept", requireAuth, async (c) => {
   const auth = getAuth(c);
   assertCsrf(c, auth);
-  rateLimit(`invite-accept:${clientIp(c)}`, 20, 60 * 60_000);
+  await rateLimit(`invite-accept:${clientIp(c)}`, 20, 60 * 60_000);
   const body = await parseJson(c, z.object({ inviteId: z.string().min(1).max(200) }));
   const invite = await findInviteById(body.inviteId);
   if (!invite) throw notFound("Invitation not found.");
@@ -184,7 +184,7 @@ invites.get("/:token", async (c) => {
 invites.post("/:token/accept", requireAuth, async (c) => {
   const auth = getAuth(c);
   assertCsrf(c, auth);
-  rateLimit(`invite-accept:${clientIp(c)}`, 20, 60 * 60_000);
+  await rateLimit(`invite-accept:${clientIp(c)}`, 20, 60 * 60_000);
   const invite = await findInviteByToken(c.req.param("token"));
   if (!invite) throw notFound("Invitation not found.");
   assertInviteUsable(invite, auth.user.email);

@@ -82,7 +82,7 @@ auth.get("/config", async (c) => {
 
 auth.post("/signup", async (c) => {
   assertOrigin(c);
-  rateLimit(`signup:${clientIp(c)}`, 10, 60 * 60_000);
+  await rateLimit(`signup:${clientIp(c)}`, 10, 60 * 60_000);
   if (await isSetupAvailable()) {
     throw conflict("Complete setup before creating accounts.");
   }
@@ -144,7 +144,7 @@ auth.post("/signup", async (c) => {
 auth.post("/login", async (c) => {
   assertOrigin(c);
   const ip = clientIp(c);
-  rateLimit(`login-ip:${ip}`, 60, 15 * 60_000);
+  await rateLimit(`login-ip:${ip}`, 60, 15 * 60_000);
   const body = await parseJson(
     c,
     z.object({
@@ -154,7 +154,7 @@ auth.post("/login", async (c) => {
     }),
   );
   const email = normalizeEmail(body.email);
-  rateLimit(`login:${ip}:${email}`, 10, 15 * 60_000);
+  await rateLimit(`login:${ip}:${email}`, 10, 15 * 60_000);
   if (!(await verifyTurnstile(body.turnstileToken, ip))) {
     throw badRequest("Turnstile verification failed. Please try again.");
   }
@@ -203,7 +203,7 @@ auth.get("/me", requireAuth, (c) => {
 auth.post("/change-password", requireAuth, async (c) => {
   const auth = getAuth(c);
   assertCsrf(c, auth);
-  rateLimit(`change-password:${auth.user.id}`, 5, 15 * 60_000);
+  await rateLimit(`change-password:${auth.user.id}`, 5, 15 * 60_000);
   const body = await parseJson(
     c,
     z.object({
@@ -279,10 +279,10 @@ auth.get("/verify", async (c) => {
 auth.post("/resend-verification", async (c) => {
   assertOrigin(c);
   const ip = clientIp(c);
-  rateLimit(`resend-ip:${ip}`, 20, 15 * 60_000);
+  await rateLimit(`resend-ip:${ip}`, 20, 15 * 60_000);
   const body = await parseJson(c, z.object({ email: emailSchema, next: z.string().max(2048).optional() }));
   const email = normalizeEmail(body.email);
-  rateLimit(`resend:${ip}:${email}`, 3, 15 * 60_000);
+  await rateLimit(`resend:${ip}:${email}`, 3, 15 * 60_000);
   const user = await findUserByEmail(email);
   if (user && !user.emailVerifiedAt) {
     const token = await createEmailToken(user.id, "verify", 24 * 60 * 60_000);
@@ -299,13 +299,13 @@ auth.post("/resend-verification", async (c) => {
 auth.post("/forgot", async (c) => {
   assertOrigin(c);
   const ip = clientIp(c);
-  rateLimit(`forgot-ip:${ip}`, 30, 15 * 60_000);
+  await rateLimit(`forgot-ip:${ip}`, 30, 15 * 60_000);
   const body = await parseJson(
     c,
     z.object({ email: emailSchema, turnstileToken: z.string().optional() }),
   );
   const email = normalizeEmail(body.email);
-  rateLimit(`forgot:${ip}:${email}`, 3, 15 * 60_000);
+  await rateLimit(`forgot:${ip}:${email}`, 3, 15 * 60_000);
   if (!(await verifyTurnstile(body.turnstileToken, ip))) {
     throw badRequest("Turnstile verification failed. Please try again.");
   }
@@ -332,7 +332,7 @@ auth.post("/forgot", async (c) => {
 
 auth.post("/reset", async (c) => {
   assertOrigin(c);
-  rateLimit(`reset:${clientIp(c)}`, 10, 15 * 60_000);
+  await rateLimit(`reset:${clientIp(c)}`, 10, 15 * 60_000);
   const body = await parseJson(
     c,
     z.object({ token: z.string().min(10), password: passwordSchema }),
@@ -361,7 +361,7 @@ auth.get("/setup/status", async (c) => {
 
 auth.post("/setup", async (c) => {
   assertOrigin(c);
-  rateLimit(`setup:${clientIp(c)}`, 10, 15 * 60_000);
+  await rateLimit(`setup:${clientIp(c)}`, 10, 15 * 60_000);
   if (!(await isSetupAvailable())) throw conflict("Setup has already been completed.");
   const token = getSetupToken();
   if (!token) throw forbidden("SETUP_TOKEN is not configured on the server.");

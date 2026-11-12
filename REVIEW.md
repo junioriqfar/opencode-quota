@@ -117,4 +117,4 @@ Screenshots show the previous demo database. The live app uses the practice data
 
 UI primitives use shadCN UI. All tables use the shared DataTable component built on shadCN Table. Charts remain custom CSS inside shadCN Cards.
 
-Security notes: `DEV_EXPOSE_EMAIL_LINKS` is forced off in production, invite emails escape user-supplied group names, login redirects are sanitized, and password policy applies to signup, setup, reset, change-password, and CLI setup. Email verification no longer creates a session; sign in afterward. Production uses `__Host-qs_session`, HSTS, and no-store API responses.
+Security notes: `DEV_EXPOSE_EMAIL_LINKS` is forced off in production, invite emails escape user-supplied group names, login redirects are sanitized, and password policy applies to signup, setup, reset, change-password, and CLI setup. Email verification no longer creates a session; sign in afterward. Production uses `__Host-qs_session`, HSTS, no-store API responses, and persistent PostgreSQL-backed rate limits.

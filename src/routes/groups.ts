@@ -242,7 +242,7 @@ groups.post("/:groupId/invites", async (c) => {
   const auth = await requireGroupOwner(c, groupId);
   assertCsrf(c, auth);
   assertVerified(auth);
-  rateLimit(`invite:${clientIp(c)}`, 30, 60 * 60_000);
+  await rateLimit(`invite:${clientIp(c)}`, 30, 60 * 60_000);
   const body = await parseJson(
     c,
     z.object({
@@ -413,7 +413,7 @@ groups.post("/:groupId/sync", async (c) => {
   const groupId = c.req.param("groupId");
   const auth = await requireGroupOwner(c, groupId);
   assertCsrf(c, auth);
-  rateLimit(`sync:${groupId}`, 3, 60_000);
+  await rateLimit(`sync:${groupId}`, 3, 60_000);
   const result = await syncGroup(groupId, { force: true });
   await audit({
     groupId,

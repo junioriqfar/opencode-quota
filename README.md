@@ -322,7 +322,7 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 - Sessions: random 32-byte token, SHA-256 hash in DB, HttpOnly/Secure/SameSite cookie.
 - CSRF: per-session token + Origin check.
 - Email tokens: one-time, hashed in DB, short expiry.
-- Rate limits: login, signup, reset, invite, sync, setup. Login, signup, forgot, and reset have per-IP budgets before body parsing; body size is capped at 1 MB.
+- Rate limits: login, signup, reset, invite, sync, setup. Budgets are stored in PostgreSQL so they survive restarts; login, signup, forgot, and reset are checked before body parsing, and body size is capped at 1 MB.
 - Account enumeration: unknown-email logins run a dummy Argon2 verification, and signup returns a generic response for existing addresses.
 - Finalization: only after the period ends; finalized rows are never mutated by later syncs.
 - Turnstile: required in production (server refuses to start without both keys); only bypassed in development.
@@ -343,7 +343,7 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 
 ### Security review status
 
-A read-only security review covered auth, tenant isolation, Console key handling, sync/billing integrity, input handling, headers, deployment scripts, and dependencies. Implemented hardening includes: production-only email-link disclosure off, required production Turnstile, HTML-escaped invite emails, sanitized auth redirects, setup/reset/CLI password policy, finalized-period immutability, dummy Argon2 timing equalization, per-IP rate limits, token invalidation on password changes, no session on email verification, `__Host-` production cookie, HSTS, no-store API responses, and a clean `bun audit`.
+A read-only security review covered auth, tenant isolation, Console key handling, sync/billing integrity, input handling, headers, deployment scripts, and dependencies. Implemented hardening includes: production-only email-link disclosure off, required production Turnstile, HTML-escaped invite emails, sanitized auth redirects, setup/reset/CLI password policy, finalized-period immutability, dummy Argon2 timing equalization, persistent per-IP rate limits, token invalidation on password changes, no session on email verification, `__Host-` production cookie, HSTS, no-store API responses, and a clean `bun audit`.
 
 ### Public repository hygiene
 

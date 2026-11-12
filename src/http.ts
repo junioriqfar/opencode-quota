@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import type { ZodSchema } from "zod";
 import { badRequest, tooMany } from "./errors.ts";
+import { sql } from "./db.ts";
 
 export function clientIp(c: Context): string {
   return (
@@ -24,23 +25,15 @@ export async function parseJson<T>(c: Context, schema: ZodSchema<T>): Promise<T>
   return parsed.data;
 }
 
-const buckets = new Map<string, { count: number; resetAt: number }>();
-let lastSweep = Date.now();
-
-export function rateLimit(key: string, limit: number, windowMs: number): void {
-  const now = Date.now();
-  if (now - lastSweep > 60_000) {
-    for (const [bucketKey, bucket] of buckets) {
-      if (bucket.resetAt <= now) buckets.delete(bucketKey);
-    }
-    lastSweep = now;
-  }
-  const bucket = buckets.get(key) ?? { count: 0, resetAt: now + windowMs };
-  if (bucket.resetAt <= now) {
-    bucket.count = 0;
-    bucket.resetAt = now + windowMs;
-  }
-  bucket.count += 1;
-  buckets.set(key, bucket);
-  if (bucket.count > limit) throw tooMany();
+export async function rateLimit(key: string, limit: number, windowMs: number): Promise<void> {
+  const resetAt = new Date(Date.now() + Math.max(1, windowMs));
+  const rows = await sql<{ count: number }[]>`
+    insert into rate_limits(key, count, reset_at)
+    values (${key}, 1, ${resetAt})
+    on conflict (key) do update set
+      count = case when rate_limits.reset_at <= now() then 1 else rate_limits.count + 1 end,
+      reset_at = case when rate_limits.reset_at <= now() then ${resetAt} else rate_limits.reset_at end
+    returning count
+  `;
+  if (Number(rows[0]?.count ?? 0) > limit) throw tooMany();
 }
