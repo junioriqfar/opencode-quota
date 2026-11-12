@@ -24,7 +24,7 @@ v2 is a multi-tenant application:
 - Scheduled syncs align to wall-clock boundaries.
 - A super-admin manages tenants, signup policy, and group limits.
 
-See [`CHANGELOG.md`](CHANGELOG.md) for recent changes.
+See [`docs/CHANGELOG.md`](docs/CHANGELOG.md) for recent changes.
 
 ## Stack
 
@@ -318,7 +318,7 @@ Mutations require `X-CSRF-Token` from `/api/auth/me` and a matching Origin.
 
 ## Security
 
-See [`SECURITY.md`](SECURITY.md) for the threat model, secrets inventory and rotation, monitoring queries, incident response, and known limitations.
+See [`docs/SECURITY.md`](docs/SECURITY.md) for the threat model, secrets inventory and rotation, monitoring queries, incident response, and known limitations.
 
 - Passwords: Argon2id via `Bun.password`.
 - Password policy: at least 8 characters with an uppercase letter, a lowercase letter, a number, and a symbol. Enforced on signup, setup, password reset, change-password, and CLI setup.
@@ -489,7 +489,7 @@ Run this once on the office PC before real billing starts.
 - [ ] The scheduled task runs as a dedicated account, not SYSTEM: `.\install-task.ps1 -ServiceUser "PC-KANTOR\svc-quota"`.
 - [ ] Only Cloudflared reaches the app; no inbound ports are opened on the router.
 - [ ] Health check returns `{"ok":true,"database":"ok"}` after a reboot.
-- [ ] The period rollover has been rehearsed on a clone: `bun scripts/rehearse-rollover.ts` (see `PRACTICE.md`).
+- [ ] The period rollover has been rehearsed on a clone: `bun scripts/rehearse-rollover.ts` (see `docs/PRACTICE.md`).
 
 ### Trust boundary
 
@@ -538,7 +538,7 @@ Keep the `APP_ENCRYPTION_KEY` separately. Without it, encrypted Console keys can
 - It may already contain your accounts and groups. Use `/login` if setup is complete; use `/setup` with the setup token only if setup is still required.
 - Use your own app account and OpenCode Console account. Do not commit `.env`, database dumps, or screenshots that show real usage data.
 - The previous demo database is `quota_status` and is backed up under `backups/` (git-ignored).
-- Follow `PRACTICE.md` for the full from-scratch flow.
+- Follow `docs/PRACTICE.md` for the full from-scratch flow.
 - Resend and Turnstile are empty; emails are logged and links are exposed in dev.
 - `DEV_EXPOSE_EMAIL_LINKS=true` is ignored in production; dev links are only returned in development.
 

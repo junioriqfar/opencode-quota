@@ -21,6 +21,8 @@
 
 ### Changed
 
+- Documentation moved to `docs/` (`CHANGELOG`, `PLAN`, `PRACTICE`, `REVIEW`, `SECURITY`); `README.md` stays at the repository root.
+
 - `deploy/windows/backup.ps1` passes the database URI straight to `pg_dump`, so passwords containing `@` or `:` work when percent-encoded.
 - `.env.example` and the docs use the real database name `opencode_quota` and default port 8788; production now refuses to start without an explicit `DATABASE_URL`.
 - `APP_URL` must be `https://` in production, and startup warns when Resend is unconfigured or `HOST` is not loopback.

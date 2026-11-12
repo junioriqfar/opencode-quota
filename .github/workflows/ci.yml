@@ -63,7 +63,7 @@ jobs:
           cp deploy/windows/install-task.ps1 dist/windows-package/
           cp deploy/windows/backup.ps1 dist/windows-package/
           cp deploy/windows/README-WINDOWS.txt dist/windows-package/
-          cp README.md REVIEW.md PRACTICE.md CHANGELOG.md dist/windows-package/
+          cp README.md docs/REVIEW.md docs/PRACTICE.md docs/CHANGELOG.md dist/windows-package/
           (cd dist/windows-package && zip -r ../quota-windows.zip .)
           rm -rf dist/windows-package
 
